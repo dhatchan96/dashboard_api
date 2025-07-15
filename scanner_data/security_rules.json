@@ -1,0 +1,85 @@
+[
+  {
+    "id": "python-hardcoded-secrets",
+    "name": "Hardcoded Secrets",
+    "description": "Detects hardcoded passwords, API keys, and secrets",
+    "severity": "CRITICAL",
+    "type": "VULNERABILITY",
+    "language": "python",
+    "pattern": "(password|secret|key|token)\\s*=\\s*[\"\\'][^\"\\']{8,}[\"\\']",
+    "remediation_effort": 30,
+    "tags": [
+      "security",
+      "secrets",
+      "owasp"
+    ],
+    "enabled": true,
+    "custom": false
+  },
+  {
+    "id": "python-sql-injection",
+    "name": "SQL Injection Risk",
+    "description": "Detects potential SQL injection vulnerabilities",
+    "severity": "CRITICAL",
+    "type": "VULNERABILITY",
+    "language": "python",
+    "pattern": "execute\\s*\\(\\s*[\"\\'].*%.*[\"\\']",
+    "remediation_effort": 60,
+    "tags": [
+      "security",
+      "injection",
+      "owasp"
+    ],
+    "enabled": true,
+    "custom": false
+  },
+  {
+    "id": "javascript-eval-usage",
+    "name": "Dangerous eval() Usage",
+    "description": "Usage of eval() function poses security risks",
+    "severity": "MAJOR",
+    "type": "VULNERABILITY",
+    "language": "javascript",
+    "pattern": "eval\\s*\\(",
+    "remediation_effort": 15,
+    "tags": [
+      "security",
+      "injection"
+    ],
+    "enabled": true,
+    "custom": false
+  },
+  {
+    "id": "python-weak-crypto",
+    "name": "Weak Cryptographic Algorithm",
+    "description": "Usage of weak cryptographic algorithms",
+    "severity": "MAJOR",
+    "type": "VULNERABILITY",
+    "language": "python",
+    "pattern": "(md5|sha1)\\s*\\(",
+    "remediation_effort": 45,
+    "tags": [
+      "security",
+      "cryptography"
+    ],
+    "enabled": true,
+    "custom": false
+  },
+  {
+    "id": "cross-lang-time-bomb",
+    "name": "Time-based Logic Bomb",
+    "description": "Detects potential time-based logic bombs",
+    "severity": "BLOCKER",
+    "type": "VULNERABILITY",
+    "language": "*",
+    "pattern": "if.*date.*>.*\\d{4}",
+    "remediation_effort": 120,
+    "tags": [
+      "security",
+      "malware",
+      "logic-bomb"
+    ],
+    "enabled": true,
+    "custom": false
+  }
+]

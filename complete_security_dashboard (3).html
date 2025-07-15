@@ -1,0 +1,3648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Security Scanner - Complete Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 50px rgba(0,0,0,0.1);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: #3498db;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .notification-bell:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .notification-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .user-profile:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3498db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Navigation */
+        .nav-container {
+            background: #34495e;
+            padding: 0 2rem;
+            border-bottom: 1px solid #2c3e50;
+        }
+
+        .nav {
+            display: flex;
+            gap: 0;
+            overflow-x: auto;
+        }
+
+        .nav-item {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            color: #bdc3c7;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.1);
+            border-bottom-color: #3498db;
+            color: white;
+        }
+
+        .nav-item i {
+            font-size: 1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem;
+            min-height: calc(100vh - 140px);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Common Styles */
+        .section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 4px solid #3498db;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-trend {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .trend-up { color: #27ae60; }
+        .trend-down { color: #e74c3c; }
+        .trend-stable { color: #95a5a6; }
+
+        /* Rating Colors */
+        .rating-A { color: #27ae60; }
+        .rating-B { color: #f39c12; }
+        .rating-C { color: #e67e22; }
+        .rating-D { color: #e74c3c; }
+        .rating-E { color: #c0392b; }
+
+        .quality-gate-OK { color: #27ae60; }
+        .quality-gate-WARN { color: #f39c12; }
+        .quality-gate-ERROR { color: #e74c3c; }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+            vertical-align: middle;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tbody tr {
+            transition: background 0.3s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Severity Badges */
+        .severity-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .severity-BLOCKER { background: #c0392b; color: white; }
+        .severity-CRITICAL { background: #e74c3c; color: white; }
+        .severity-MAJOR { background: #f39c12; color: white; }
+        .severity-MINOR { background: #3498db; color: white; }
+        .severity-INFO { background: #95a5a6; color: white; }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-OPEN { background: #fff3cd; color: #856404; }
+        .status-CONFIRMED { background: #d1ecf1; color: #0c5460; }
+        .status-RESOLVED { background: #d4edda; color: #155724; }
+        .status-FALSE_POSITIVE { background: #f8d7da; color: #721c24; }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        /* Forms */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-control.textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-select {
+            padding: 0.5rem;
+            border: 2px solid #ecf0f1;
+            border-radius: 6px;
+            background: white;
+        }
+
+        /* Charts */
+        .chart-container {
+            height: 300px;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 3% auto;
+            padding: 2rem;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 12px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .close {
+            font-size: 2rem;
+            cursor: pointer;
+            color: #95a5a6;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #e74c3c;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border: 1px solid #f1c2c8;
+            color: #721c24;
+        }
+
+        .alert-info {
+            background: #cce7ff;
+            border: 1px solid #99d6ff;
+            color: #004085;
+        }
+
+        /* Leaderboard specific styles */
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .leaderboard-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .rank-badge {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-right: 1.5rem;
+            min-width: 4rem;
+            text-align: center;
+            border-radius: 50%;
+            width: 4rem;
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rank-1 { background: linear-gradient(135deg, #ffd700, #ffed4e); color: #8b7a00; }
+        .rank-2 { background: linear-gradient(135deg, #c0c0c0, #e8e8e8); color: #666; }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32, #daa562); color: #8b4513; }
+        .rank-other { background: linear-gradient(135deg, #ecf0f1, #bdc3c7); color: #7f8c8d; }
+
+        .project-info {
+            flex: 1;
+        }
+
+        .project-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: #2c3e50;
+        }
+
+        .project-details {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .score-display {
+            text-align: right;
+            min-width: 120px;
+        }
+
+        .score-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .score-grade {
+            font-size: 1rem;
+            color: #7f8c8d;
+        }
+
+        /* Quality Gate Cards */
+        .quality-gate-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .gate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .gate-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .gate-default {
+            background: #3498db;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .gate-conditions {
+            margin: 1rem 0;
+        }
+
+        .condition-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .condition-item:last-child {
+            border-bottom: none;
+        }
+
+        .condition-metric {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .condition-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .condition-pass {
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        .condition-fail {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .gate-overall-status {
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .gate-status-pass {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .gate-status-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Analytics Charts */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        /* System Status */
+        .system-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-online { color: #27ae60; }
+        .status-warning { color: #f39c12; }
+        .status-error { color: #e74c3c; }
+
+        .status-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav {
+                justify-content: center;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .leaderboard-item {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .rank-badge {
+                margin-bottom: 1rem;
+            }
+
+            .data-table {
+                font-size: 0.8rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem 0.25rem;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Animation for cards */
+        .animate-card {
+            animation: slideInUp 0.5s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Utility Classes */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 1rem; }
+        .d-flex { display: flex; }
+        .align-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-1 { gap: 0.5rem; }
+        .gap-2 { gap: 1rem; }
+
+        /* File upload */
+        .file-upload {
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            background: #e3f2fd;
+            border-color: #2980b9;
+        }
+
+        .file-upload.dragover {
+            background: #e3f2fd;
+            border-color: #2980b9;
+            transform: scale(1.02);
+        }
+
+        .file-upload-icon {
+            font-size: 3rem;
+            color: #3498db;
+            margin-bottom: 1rem;
+        }
+
+        .file-upload-text {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-upload-hint {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                Enhanced Security Scanner
+            </div>
+            <div class="header-actions">
+                <div class="notification-bell" onclick="showNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-count" id="notification-count">3</span>
+                </div>
+                <div class="user-profile" onclick="showUserMenu()">
+                    <div class="user-avatar">A</div>
+                    <span>Admin User</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-container">
+            <div class="nav">
+                <div class="nav-item active" onclick="showTab('overview', this)">
+                    <i class="fas fa-chart-pie"></i>
+                    Overview
+                </div>
+                <div class="nav-item" onclick="showTab('projects', this)">
+                    <i class="fas fa-folder-open"></i>
+                    Projects
+                </div>
+                <div class="nav-item" onclick="showTab('issues', this)">
+                    <i class="fas fa-bug"></i>
+                    Issues
+                </div>
+                <div class="nav-item" onclick="showTab('rules', this)">
+                    <i class="fas fa-list-check"></i>
+                    Rules
+                </div>
+                <div class="nav-item" onclick="showTab('quality-gates', this)">
+                    <i class="fas fa-gate-open"></i>
+                    Quality Gates
+                </div>
+                <div class="nav-item" onclick="showTab('leaderboard', this)">
+                    <i class="fas fa-trophy"></i>
+                    Leaderboard
+                </div>
+                <div class="nav-item" onclick="showTab('analytics', this)">
+                    <i class="fas fa-chart-line"></i>
+                    Analytics
+                </div>
+                <div class="nav-item" onclick="showTab('administration', this)">
+                    <i class="fas fa-cog"></i>
+                    Administration
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Overview Tab -->
+            <div id="overview-tab" class="tab-content active">
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    All systems operational. Last scan completed successfully 2 minutes ago.
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card animate-card">
+                        <div class="metric-value rating-A">
+                            A
+                            <div class="metric-trend trend-up">
+                                <i class="fas fa-arrow-up"></i> +1.8%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="leaderboard-item animate-card">
+                        <div class="rank-badge rank-other">4</div>
+                        <div class="project-info">
+                            <div class="project-name">Data Pipeline</div>
+                            <div class="project-details">
+                                <i class="fas fa-users"></i> Data Team •
+                                <i class="fas fa-code"></i> Python + Spark •
+                                <i class="fas fa-clock"></i> Last scanned 8 hours ago
+                            </div>
+                            <div class="mt-1">
+                                <span class="severity-badge severity-MINOR" style="margin-right: 0.5rem;">7 Issues</span>
+                                <span class="rating-A">Security: A</span> •
+                                <span class="quality-gate-OK">Quality Gate: PASSED</span>
+                            </div>
+                        </div>
+                        <div class="score-display">
+                            <div class="score-value">87.3</div>
+                            <div class="score-grade">Grade: B+</div>
+                            <div class="metric-trend trend-stable">
+                                <i class="fas fa-minus"></i> -0.2%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="leaderboard-item animate-card">
+                        <div class="rank-badge rank-other">5</div>
+                        <div class="project-info">
+                            <div class="project-name">Authentication Service</div>
+                            <div class="project-details">
+                                <i class="fas fa-users"></i> Security Team •
+                                <i class="fas fa-code"></i> Node.js •
+                                <i class="fas fa-clock"></i> Last scanned 12 hours ago
+                            </div>
+                            <div class="mt-1">
+                                <span class="severity-badge severity-MAJOR" style="margin-right: 0.5rem;">15 Issues</span>
+                                <span class="rating-B">Security: B</span> •
+                                <span class="quality-gate-WARN">Quality Gate: WARNING</span>
+                            </div>
+                        </div>
+                        <div class="score-display">
+                            <div class="score-value">84.2</div>
+                            <div class="score-grade">Grade: B</div>
+                            <div class="metric-trend trend-down">
+                                <i class="fas fa-arrow-down"></i> -3.1%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content">
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-chart-line"></i>
+                            Security Analytics & Insights
+                        </h2>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-primary" onclick="generateReport()">
+                                <i class="fas fa-file-pdf"></i> Generate Report
+                            </button>
+                            <button class="btn btn-secondary" onclick="refreshAnalytics()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportAnalytics()">
+                                <i class="fas fa-download"></i> Export Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="filters" style="margin-bottom: 2rem;">
+                        <div class="filter-group">
+                            <label><i class="fas fa-calendar"></i> Time Range:</label>
+                            <select class="filter-select" id="analytics-timerange" onchange="updateAnalytics()">
+                                <option value="7d">Last 7 Days</option>
+                                <option value="30d" selected>Last 30 Days</option>
+                                <option value="90d">Last 90 Days</option>
+                                <option value="1y">Last Year</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-project-diagram"></i> Projects:</label>
+                            <select class="filter-select" id="analytics-projects" onchange="updateAnalytics()">
+                                <option value="all">All Projects</option>
+                                <option value="web-frontend">Web Frontend</option>
+                                <option value="api-backend">API Backend</option>
+                                <option value="mobile-app">Mobile App</option>
+                                <option value="data-pipeline">Data Pipeline</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-users"></i> Teams:</label>
+                            <select class="filter-select" id="analytics-teams" onchange="updateAnalytics()">
+                                <option value="all">All Teams</option>
+                                <option value="frontend">Frontend Team</option>
+                                <option value="backend">Backend Team</option>
+                                <option value="mobile">Mobile Team</option>
+                                <option value="security">Security Team</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="analytics-grid">
+                        <div class="chart-card">
+                            <h3 class="chart-title">Security Issues Trend</h3>
+                            <div class="chart-container">
+                                <canvas id="issuesTrendChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <h3 class="chart-title">Issues by Severity</h3>
+                            <div class="chart-container">
+                                <canvas id="severityChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <h3 class="chart-title">Security Rating Distribution</h3>
+                            <div class="chart-container">
+                                <canvas id="ratingChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <h3 class="chart-title">Team Performance</h3>
+                            <div class="chart-container">
+                                <canvas id="teamPerformanceChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <h3 class="chart-title">Vulnerability Types</h3>
+                            <div class="chart-container">
+                                <canvas id="vulnerabilityTypesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <h3 class="chart-title">Resolution Time</h3>
+                            <div class="chart-container">
+                                <canvas id="resolutionTimeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section" style="margin-top: 2rem;">
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i class="fas fa-lightbulb"></i>
+                                Security Insights & Recommendations
+                            </h3>
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>High Priority:</strong> 3 projects have critical security vulnerabilities requiring immediate attention.
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Trend Alert:</strong> Security issue detection increased by 15% this month across mobile projects.
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    <strong>Good Progress:</strong> Backend team resolved 89% of issues faster than average this quarter.
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-clock"></i>
+                                    <strong>Action Needed:</strong> 12 issues have been open for more than 30 days without resolution.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Administration Tab -->
+            <div id="administration-tab" class="tab-content">
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-cog"></i>
+                            System Administration
+                        </h2>
+                    </div>
+
+                    <div class="system-status">
+                        <div class="status-card">
+                            <i class="fas fa-server status-icon status-online"></i>
+                            <div class="status-label">Scanner Engine</div>
+                            <div style="color: #27ae60; font-weight: 600;">Online</div>
+                            <small>Last ping: 2s ago</small>
+                        </div>
+                        <div class="status-card">
+                            <i class="fas fa-database status-icon status-online"></i>
+                            <div class="status-label">Database</div>
+                            <div style="color: #27ae60; font-weight: 600;">Healthy</div>
+                            <small>Response: 12ms</small>
+                        </div>
+                        <div class="status-card">
+                            <i class="fas fa-cloud status-icon status-warning"></i>
+                            <div class="status-label">Rule Updates</div>
+                            <div style="color: #f39c12; font-weight: 600;">Pending</div>
+                            <small>3 updates available</small>
+                        </div>
+                        <div class="status-card">
+                            <i class="fas fa-shield-alt status-icon status-online"></i>
+                            <div class="status-label">Security</div>
+                            <div style="color: #27ae60; font-weight: 600;">Protected</div>
+                            <small>SSL/TLS Active</small>
+                        </div>
+                    </div>
+
+                    <div class="form-grid" style="margin-top: 2rem;">
+                        <div class="section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-users-cog"></i>
+                                    User Management
+                                </h3>
+                                <button class="btn btn-primary" onclick="showCreateUserModal()">
+                                    <i class="fas fa-user-plus"></i> Add User
+                                </button>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Role</th>
+                                            <th>Last Login</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-center gap-1">
+                                                    <div class="user-avatar" style="width: 24px; height: 24px; font-size: 0.8rem;">A</div>
+                                                    Admin User
+                                                </div>
+                                            </td>
+                                            <td><span class="severity-badge severity-CRITICAL">Admin</span></td>
+                                            <td>Active now</td>
+                                            <td><span style="color: #27ae60;"><i class="fas fa-circle"></i> Active</span></td>
+                                            <td>
+                                                <button class="btn btn-secondary btn-sm" onclick="editUser('admin')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-center gap-1">
+                                                    <div class="user-avatar" style="width: 24px; height: 24px; font-size: 0.8rem; background: #e74c3c;">J</div>
+                                                    John Doe
+                                                </div>
+                                            </td>
+                                            <td><span class="severity-badge severity-MAJOR">Developer</span></td>
+                                            <td>2 hours ago</td>
+                                            <td><span style="color: #27ae60;"><i class="fas fa-circle"></i> Active</span></td>
+                                            <td>
+                                                <button class="btn btn-secondary btn-sm" onclick="editUser('john')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-warning btn-sm" onclick="suspendUser('john')">
+                                                    <i class="fas fa-user-slash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-center gap-1">
+                                                    <div class="user-avatar" style="width: 24px; height: 24px; font-size: 0.8rem; background: #f39c12;">J</div>
+                                                    Jane Smith
+                                                </div>
+                                            </td>
+                                            <td><span class="severity-badge severity-MAJOR">Developer</span></td>
+                                            <td>1 day ago</td>
+                                            <td><span style="color: #27ae60;"><i class="fas fa-circle"></i> Active</span></td>
+                                            <td>
+                                                <button class="btn btn-secondary btn-sm" onclick="editUser('jane')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-warning btn-sm" onclick="suspendUser('jane')">
+                                                    <i class="fas fa-user-slash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-cogs"></i>
+                                    System Configuration
+                                </h3>
+                                <button class="btn btn-primary" onclick="saveConfiguration()">
+                                    <i class="fas fa-save"></i> Save Settings
+                                </button>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="scan-frequency">Default Scan Frequency</label>
+                                    <select class="form-control" id="scan-frequency">
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly" selected>Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="manual">Manual Only</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="retention-period">Data Retention (Days)</label>
+                                    <input type="number" class="form-control" id="retention-period" value="365" min="30" max="3650">
+                                </div>
+                                <div class="form-group">
+                                    <label for="max-concurrent-scans">Max Concurrent Scans</label>
+                                    <input type="number" class="form-control" id="max-concurrent-scans" value="5" min="1" max="20">
+                                </div>
+                                <div class="form-group">
+                                    <label for="notification-threshold">Alert Threshold</label>
+                                    <select class="form-control" id="notification-threshold">
+                                        <option value="all">All Issues</option>
+                                        <option value="critical" selected>Critical & Above</option>
+                                        <option value="blocker">Blocker Only</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-database"></i>
+                                    Data Management
+                                </h3>
+                            </div>
+                            <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr);">
+                                <div class="metric-card">
+                                    <div class="metric-value">2.4 GB</div>
+                                    <div class="metric-label">Total Storage Used</div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 24%"></div>
+                                    </div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-value">1,247</div>
+                                    <div class="metric-label">Total Scans</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-value">15,892</div>
+                                    <div class="metric-label">Total Issues Found</div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2" style="margin-top: 1rem;">
+                                <button class="btn btn-primary" onclick="exportAllData()">
+                                    <i class="fas fa-download"></i> Export All Data
+                                </button>
+                                <button class="btn btn-warning" onclick="showBackupModal()">
+                                    <i class="fas fa-save"></i> Create Backup
+                                </button>
+                                <button class="btn btn-secondary" onclick="showRestoreModal()">
+                                    <i class="fas fa-upload"></i> Restore Backup
+                                </button>
+                                <button class="btn btn-danger" onclick="showCleanupModal()">
+                                    <i class="fas fa-trash"></i> Cleanup Old Data
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-bell"></i>
+                                    Notification Settings
+                                </h3>
+                                <button class="btn btn-primary" onclick="saveNotificationSettings()">
+                                    <i class="fas fa-save"></i> Save Settings
+                                </button>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" checked> Email Notifications
+                                    </label>
+                                    <small>Receive email alerts for critical security issues</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" checked> Slack Integration
+                                    </label>
+                                    <small>Post notifications to Slack channels</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox"> SMS Alerts
+                                    </label>
+                                    <small>Send SMS for blocker-level issues</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="webhook-url">Webhook URL</label>
+                                    <input type="url" class="form-control" id="webhook-url" placeholder="https://your-webhook-url.com">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <!-- New Project Modal -->
+        <div id="newProjectModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Create New Security Scan</h3>
+                    <span class="close" onclick="closeModal('newProjectModal')">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="newProjectForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="project-name">Project Name *</label>
+                                <input type="text" class="form-control" id="project-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="project-team">Team</label>
+                                <select class="form-control" id="project-team">
+                                    <option value="frontend">Frontend Team</option>
+                                    <option value="backend">Backend Team</option>
+                                    <option value="mobile">Mobile Team</option>
+                                    <option value="devops">DevOps Team</option>
+                                    <option value="security">Security Team</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="project-language">Primary Language</label>
+                                <select class="form-control" id="project-language">
+                                    <option value="javascript">JavaScript</option>
+                                    <option value="python">Python</option>
+                                    <option value="java">Java</option>
+                                    <option value="csharp">C#</option>
+                                    <option value="php">PHP</option>
+                                    <option value="go">Go</option>
+                                    <option value="rust">Rust</option>
+                                    <option value="cpp">C++</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="project-framework">Framework</label>
+                                <input type="text" class="form-control" id="project-framework" placeholder="e.g., React, Flask, Spring">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="project-description">Description</label>
+                            <textarea class="form-control textarea" id="project-description" placeholder="Brief description of the project"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Source Code</label>
+                            <div class="file-upload" onclick="document.getElementById('file-input').click()">
+                                <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                                <div class="file-upload-text">Upload source code files</div>
+                                <div class="file-upload-hint">Drag & drop files here or click to browse</div>
+                                <input type="file" id="file-input" multiple accept=".js,.py,.java,.cs,.php,.go,.rs,.cpp,.h,.jsx,.tsx,.ts" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 justify-between">
+                            <button type="button" class="btn btn-secondary" onclick="closeModal('newProjectModal')">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Start Scan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Rule Modal -->
+        <div id="createRuleModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Create Security Rule</h3>
+                    <span class="close" onclick="closeModal('createRuleModal')">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="createRuleForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="rule-id">Rule ID *</label>
+                                <input type="text" class="form-control" id="rule-id" required placeholder="e.g., custom-security-check">
+                            </div>
+                            <div class="form-group">
+                                <label for="rule-name">Rule Name *</label>
+                                <input type="text" class="form-control" id="rule-name" required placeholder="Descriptive rule name">
+                            </div>
+                            <div class="form-group">
+                                <label for="rule-language">Target Language</label>
+                                <select class="form-control" id="rule-language">
+                                    <option value="*">All Languages</option>
+                                    <option value="javascript">JavaScript</option>
+                                    <option value="python">Python</option>
+                                    <option value="java">Java</option>
+                                    <option value="csharp">C#</option>
+                                    <option value="php">PHP</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="rule-category">Category</label>
+                                <select class="form-control" id="rule-category">
+                                    <option value="security">Security</option>
+                                    <option value="reliability">Reliability</option>
+                                    <option value="maintainability">Maintainability</option>
+                                    <option value="performance">Performance</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="rule-severity">Severity</label>
+                                <select class="form-control" id="rule-severity">
+                                    <option value="BLOCKER">Blocker</option>
+                                    <option value="CRITICAL">Critical</option>
+                                    <option value="MAJOR">Major</option>
+                                    <option value="MINOR">Minor</option>
+                                    <option value="INFO">Info</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="rule-type">Issue Type</label>
+                                <select class="form-control" id="rule-type">
+                                    <option value="VULNERABILITY">Vulnerability</option>
+                                    <option value="BUG">Bug</option>
+                                    <option value="CODE_SMELL">Code Smell</option>
+                                    <option value="SECURITY_HOTSPOT">Security Hotspot</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="rule-description">Description *</label>
+                            <textarea class="form-control textarea" id="rule-description" required placeholder="Describe what this rule detects and why it's important"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="rule-pattern">Detection Pattern *</label>
+                            <textarea class="form-control textarea" id="rule-pattern" required placeholder="Regular expression or code pattern to match"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="rule-remedy">Remediation Guidance</label>
+                            <textarea class="form-control textarea" id="rule-remedy" placeholder="How to fix issues found by this rule"></textarea>
+                        </div>
+                        <div class="d-flex gap-2 justify-between">
+                            <button type="button" class="btn btn-secondary" onclick="closeModal('createRuleModal')">Cancel</button>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-warning" onclick="testRule()">
+                                    <i class="fas fa-flask"></i> Test Rule
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Create Rule
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quality Gate Modal -->
+        <div id="createQualityGateModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Create Quality Gate</h3>
+                    <span class="close" onclick="closeModal('createQualityGateModal')">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="createQualityGateForm">
+                        <div class="form-group">
+                            <label for="gate-name">Quality Gate Name *</label>
+                            <input type="text" class="form-control" id="gate-name" required placeholder="e.g., Production Quality Gate">
+                        </div>
+                        <div class="form-group">
+                            <label for="gate-description">Description</label>
+                            <textarea class="form-control" id="gate-description" placeholder="Description of this quality gate's purpose"></textarea>
+                        </div>
+                        
+                        <h4 style="margin: 1.5rem 0 1rem 0;">Quality Conditions</h4>
+                        <div id="conditions-container">
+                            <div class="condition-row" style="border: 1px solid #ecf0f1; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Metric</label>
+                                        <select class="form-control condition-metric">
+                                            <option value="security_rating">Security Rating</option>
+                                            <option value="reliability_rating">Reliability Rating</option>
+                                            <option value="maintainability_rating">Maintainability Rating</option>
+                                            <option value="coverage">Code Coverage</option>
+                                            <option value="duplicated_lines_density">Duplication</option>
+                                            <option value="blocker_violations">Blocker Issues</option>
+                                            <option value="critical_violations">Critical Issues</option>
+                                            <option value="major_violations">Major Issues</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Operator</label>
+                                        <select class="form-control condition-operator">
+                                            <option value="GT">Greater than</option>
+                                            <option value="LT">Less than</option>
+                                            <option value="EQ">Equals</option>
+                                            <option value="NE">Not equals</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Threshold</label>
+                                        <input type="text" class="form-control condition-value" placeholder="e.g., 80, A, 0">
+                                    </div>
+                                    <div class="form-group" style="display: flex; align-items: end;">
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeCondition(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-secondary" onclick="addCondition()">
+                            <i class="fas fa-plus"></i> Add Condition
+                        </button>
+                        
+                        <div class="d-flex gap-2 justify-between" style="margin-top: 2rem;">
+                            <button type="button" class="btn btn-secondary" onclick="closeModal('createQualityGateModal')">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Quality Gate
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Issue Details Modal -->
+        <div id="issueDetailsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Issue Details</h3>
+                    <span class="close" onclick="closeModal('issueDetailsModal')">&times;</span>
+                </div>
+                <div class="modal-body" id="issue-details-content">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentTab = 'overview';
+        let charts = {};
+        let securityData = {
+            projects: [],
+            issues: [],
+            rules: [],
+            qualityGates: [],
+            users: []
+        };
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            loadData();
+            setupEventListeners();
+        });
+
+        // Tab Navigation
+        function showTab(tabName, clickedElement) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all nav items
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+            
+            // Show selected tab content
+            const selectedTab = document.getElementById(tabName + '-tab');
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            
+            // Add active class to clicked nav item
+            if (clickedElement) {
+                clickedElement.classList.add('active');
+            }
+            
+            currentTab = tabName;
+            
+            // Refresh charts if analytics tab is shown
+            if (tabName === 'analytics') {
+                setTimeout(refreshAnalytics, 100);
+            }
+            
+            // Initialize charts for overview tab
+            if (tabName === 'overview') {
+                setTimeout(refreshCharts, 100);
+            }
+        }
+
+        // Initialize Charts
+        function initializeCharts() {
+            // Security Trend Chart
+            const securityTrendCtx = document.getElementById('securityTrendChart');
+            if (securityTrendCtx) {
+                charts.securityTrend = new Chart(securityTrendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                        datasets: [{
+                            label: 'Critical Issues',
+                            data: [8, 6, 4, 3],
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            tension: 0.4
+                        }, {
+                            label: 'Major Issues',
+                            data: [15, 12, 10, 8],
+                            borderColor: '#f39c12',
+                            backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                            tension: 0.4
+                        }, {
+                            label: 'Minor Issues',
+                            data: [25, 23, 20, 18],
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Issues Trend Chart
+            const issuesTrendCtx = document.getElementById('issuesTrendChart');
+            if (issuesTrendCtx) {
+                charts.issuesTrend = new Chart(issuesTrendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Issues Found',
+                            data: [45, 52, 38, 41, 35, 28],
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }, {
+                            label: 'Issues Resolved',
+                            data: [38, 48, 42, 39, 41, 35],
+                            borderColor: '#27ae60',
+                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Severity Chart
+            const severityCtx = document.getElementById('severityChart');
+            if (severityCtx) {
+                charts.severity = new Chart(severityCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Blocker', 'Critical', 'Major', 'Minor', 'Info'],
+                        datasets: [{
+                            data: [1, 3, 8, 15, 25],
+                            backgroundColor: [
+                                '#c0392b',
+                                '#e74c3c',
+                                '#f39c12',
+                                '#3498db',
+                                '#95a5a6'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Rating Chart
+            const ratingCtx = document.getElementById('ratingChart');
+            if (ratingCtx) {
+                charts.rating = new Chart(ratingCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['A', 'B', 'C', 'D', 'E'],
+                        datasets: [{
+                            label: 'Projects',
+                            data: [8, 4, 2, 1, 0],
+                            backgroundColor: [
+                                '#27ae60',
+                                '#f39c12',
+                                '#e67e22',
+                                '#e74c3c',
+                                '#c0392b'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Team Performance Chart
+            const teamPerformanceCtx = document.getElementById('teamPerformanceChart');
+            if (teamPerformanceCtx) {
+                charts.teamPerformance = new Chart(teamPerformanceCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Security', 'Reliability', 'Maintainability', 'Coverage', 'Performance'],
+                        datasets: [{
+                            label: 'Frontend Team',
+                            data: [85, 92, 88, 89, 90],
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        }, {
+                            label: 'Backend Team',
+                            data: [92, 88, 85, 94, 87],
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Vulnerability Types Chart
+            const vulnerabilityTypesCtx = document.getElementById('vulnerabilityTypesChart');
+            if (vulnerabilityTypesCtx) {
+                charts.vulnerabilityTypes = new Chart(vulnerabilityTypesCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['SQL Injection', 'XSS', 'Hardcoded Secrets', 'Weak Crypto', 'Path Traversal'],
+                        datasets: [{
+                            data: [8, 12, 5, 3, 7],
+                            backgroundColor: [
+                                '#e74c3c',
+                                '#f39c12',
+                                '#c0392b',
+                                '#e67e22',
+                                '#d35400'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Resolution Time Chart
+            const resolutionTimeCtx = document.getElementById('resolutionTimeChart');
+            if (resolutionTimeCtx) {
+                charts.resolutionTime = new Chart(resolutionTimeCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Blocker', 'Critical', 'Major', 'Minor'],
+                        datasets: [{
+                            label: 'Avg Resolution Time (hours)',
+                            data: [4, 24, 72, 168],
+                            backgroundColor: [
+                                '#c0392b',
+                                '#e74c3c',
+                                '#f39c12',
+                                '#3498db'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            // File upload drag and drop
+            const fileUpload = document.querySelector('.file-upload');
+            if (fileUpload) {
+                fileUpload.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    fileUpload.classList.add('dragover');
+                });
+
+                fileUpload.addEventListener('dragleave', () => {
+                    fileUpload.classList.remove('dragover');
+                });
+
+                fileUpload.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    fileUpload.classList.remove('dragover');
+                    handleFileUpload(e.dataTransfer.files);
+                });
+            }
+
+            // Modal close on outside click
+            window.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            });
+        }
+
+        // Data Management
+        function loadData() {
+            // In a real application, this would load from a backend API
+            securityData = {
+                projects: [
+                    {
+                        id: 'web-frontend',
+                        name: 'Web Frontend',
+                        team: 'Frontend Team',
+                        language: 'React + TypeScript',
+                        lastScan: '2 hours ago',
+                        securityRating: 'A',
+                        qualityGate: 'PASSED',
+                        issues: 12,
+                        coverage: 89,
+                        health: 'Excellent'
+                    }
+                    // Add more projects...
+                ],
+                issues: [
+                    {
+                        id: '1',
+                        severity: 'BLOCKER',
+                        type: 'Vulnerability',
+                        rule: 'hardcoded-secrets',
+                        file: 'auth/config.py',
+                        line: 45,
+                        status: 'OPEN',
+                        assignee: null,
+                        created: '2 hours ago',
+                        message: 'Hardcoded API key detected in configuration'
+                    }
+                    // Add more issues...
+                ]
+            };
+        }
+
+        function saveData() {
+            // In a real application, this would save to a backend API
+            localStorage.setItem('securityData', JSON.stringify(securityData));
+        }
+
+        // Modal Functions
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function showNewProjectModal() {
+            showModal('newProjectModal');
+        }
+
+        function showCreateRuleModal() {
+            showModal('createRuleModal');
+        }
+
+        function showCreateQualityGateModal() {
+            showModal('createQualityGateModal');
+        }
+
+        function showCreateUserModal() {
+            // Create user modal would be similar to others
+            alert('Create User modal would open here');
+        }
+
+        function showBackupModal() {
+            alert('Backup modal would open here');
+        }
+
+        function showRestoreModal() {
+            alert('Restore modal would open here');
+        }
+
+        function showCleanupModal() {
+            alert('Cleanup modal would open here');
+        }
+
+        // Project Functions
+        function scanProject(projectId) {
+            alert(`Scanning project: ${projectId}`);
+            // Implement scanning logic
+        }
+
+        function viewProjectDetails(projectId) {
+            alert(`Viewing details for project: ${projectId}`);
+            // Implement project details view
+        }
+
+        function downloadReport(projectId) {
+            alert(`Downloading report for project: ${projectId}`);
+            // Implement report download
+        }
+
+        function filterProjects() {
+            // Implement project filtering
+            console.log('Filtering projects...');
+        }
+
+        function exportProjects() {
+            alert('Exporting projects data...');
+            // Implement export functionality
+        }
+
+        function importProject() {
+            alert('Import project functionality would open here');
+        }
+
+        // Issue Functions
+        function viewIssueDetails(issueId) {
+            // Populate and show issue details modal
+            const issue = securityData.issues.find(i => i.id === issueId);
+            if (issue) {
+                const content = `
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Severity</label>
+                            <span class="severity-badge severity-${issue.severity}">${issue.severity}</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <span>${issue.type}</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Rule</label>
+                            <code>${issue.rule}</code>
+                        </div>
+                        <div class="form-group">
+                            <label>File</label>
+                            <span>${issue.file}:${issue.line}</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <span class="status-badge status-${issue.status}">${issue.status}</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Assignee</label>
+                            <span>${issue.assignee || 'Unassigned'}</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <p>${issue.message}</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-warning" onclick="assignIssue('${issueId}')">
+                            <i class="fas fa-user-plus"></i> Assign
+                        </button>
+                        <button class="btn btn-success" onclick="resolveIssue('${issueId}')">
+                            <i class="fas fa-check"></i> Resolve
+                        </button>
+                        <button class="btn btn-secondary" onclick="addComment('${issueId}')">
+                            <i class="fas fa-comment"></i> Add Comment
+                        </button>
+                    </div>
+                `;
+                document.getElementById('issue-details-content').innerHTML = content;
+                showModal('issueDetailsModal');
+            }
+        }
+
+        function assignIssue(issueId) {
+            const assignee = prompt('Assign to user:');
+            if (assignee) {
+                alert(`Issue ${issueId} assigned to ${assignee}`);
+                // Implement assignment logic
+            }
+        }
+
+        function resolveIssue(issueId) {
+            if (confirm('Mark this issue as resolved?')) {
+                alert(`Issue ${issueId} resolved`);
+                // Implement resolution logic
+            }
+        }
+
+        function reopenIssue(issueId) {
+            if (confirm('Reopen this issue?')) {
+                alert(`Issue ${issueId} reopened`);
+                // Implement reopen logic
+            }
+        }
+
+        function addComment(issueId) {
+            const comment = prompt('Add comment:');
+            if (comment) {
+                alert(`Comment added to issue ${issueId}`);
+                // Implement comment logic
+            }
+        }
+
+        function filterIssues() {
+            // Implement issue filtering
+            console.log('Filtering issues...');
+        }
+
+        function exportIssues() {
+            alert('Exporting issues data...');
+            // Implement export functionality
+        }
+
+        function bulkActions() {
+            alert('Bulk actions modal would open here');
+        }
+
+        function toggleAllIssues() {
+            const checkboxes = document.querySelectorAll('.issue-checkbox');
+            const selectAll = document.getElementById('select-all-issues');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        }
+
+        // Rule Functions
+        function editRule(ruleId) {
+            alert(`Editing rule: ${ruleId}`);
+            // Implement rule editing
+        }
+
+        function testRule(ruleId) {
+            alert(`Testing rule: ${ruleId}`);
+            // Implement rule testing
+        }
+
+        function toggleRule(ruleId) {
+            alert(`Toggling rule: ${ruleId}`);
+            // Implement rule toggle
+        }
+
+        function duplicateRule(ruleId) {
+            alert(`Duplicating rule: ${ruleId}`);
+            // Implement rule duplication
+        }
+
+        function filterRules() {
+            console.log('Filtering rules...');
+        }
+
+        function importRules() {
+            alert('Import rules functionality would open here');
+        }
+
+        function exportRules() {
+            alert('Exporting rules data...');
+        }
+
+        // Quality Gate Functions
+        function editQualityGate(gateId) {
+            alert(`Editing quality gate: ${gateId}`);
+        }
+
+        function duplicateQualityGate(gateId) {
+            alert(`Duplicating quality gate: ${gateId}`);
+        }
+
+        function testQualityGate(gateId) {
+            alert(`Testing quality gate: ${gateId}`);
+        }
+
+        function setDefaultGate(gateId) {
+            alert(`Setting ${gateId} as default quality gate`);
+        }
+
+        function addCondition() {
+            const container = document.getElementById('conditions-container');
+            const conditionHTML = `
+                <div class="condition-row" style="border: 1px solid #ecf0f1; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Metric</label>
+                            <select class="form-control condition-metric">
+                                <option value="security_rating">Security Rating</option>
+                                <option value="reliability_rating">Reliability Rating</option>
+                                <option value="maintainability_rating">Maintainability Rating</option>
+                                <option value="coverage">Code Coverage</option>
+                                <option value="duplicated_lines_density">Duplication</option>
+                                <option value="blocker_violations">Blocker Issues</option>
+                                <option value="critical_violations">Critical Issues</option>
+                                <option value="major_violations">Major Issues</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Operator</label>
+                            <select class="form-control condition-operator">
+                                <option value="GT">Greater than</option>
+                                <option value="LT">Less than</option>
+                                <option value="EQ">Equals</option>
+                                <option value="NE">Not equals</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Threshold</label>
+                            <input type="text" class="form-control condition-value" placeholder="e.g., 80, A, 0">
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: end;">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeCondition(this)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', conditionHTML);
+        }
+
+        function removeCondition(button) {
+            button.closest('.condition-row').remove();
+        }
+
+        function importQualityGates() {
+            alert('Import quality gates functionality would open here');
+        }
+
+        // Analytics Functions
+        function refreshAnalytics() {
+            // Refresh all analytics charts
+            Object.values(charts).forEach(chart => {
+                if (chart && chart.update) {
+                    chart.update();
+                }
+            });
+        }
+
+        function updateAnalytics() {
+            console.log('Updating analytics based on filters...');
+            refreshAnalytics();
+        }
+
+        function generateReport() {
+            alert('Generating comprehensive security report...');
+        }
+
+        function exportAnalytics() {
+            alert('Exporting analytics data...');
+        }
+
+        // Leaderboard Functions
+        function refreshLeaderboard() {
+            alert('Refreshing leaderboard data...');
+        }
+
+        function exportLeaderboard() {
+            alert('Exporting leaderboard data...');
+        }
+
+        function viewTeamRankings() {
+            alert('Switching to team rankings view...');
+        }
+
+        // Administration Functions
+        function saveConfiguration() {
+            alert('Configuration saved successfully!');
+        }
+
+        function saveNotificationSettings() {
+            alert('Notification settings saved!');
+        }
+
+        function exportAllData() {
+            const dataStr = JSON.stringify(securityData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'security_data_backup.json';
+            link.click();
+        }
+
+        function editUser(userId) {
+            alert(`Editing user: ${userId}`);
+        }
+
+        function suspendUser(userId) {
+            if (confirm(`Suspend user ${userId}?`)) {
+                alert(`User ${userId} suspended`);
+            }
+        }
+
+        // Header Functions
+        function showNotifications() {
+            alert('Notifications panel would open here');
+        }
+
+        function showUserMenu() {
+            alert('User menu would open here');
+        }
+
+        // Utility Functions
+        function refreshCharts() {
+            if (charts.securityTrend) {
+                charts.securityTrend.update();
+            }
+        }
+
+        function handleFileUpload(files) {
+            console.log('Files uploaded:', files);
+            // Implement file upload logic
+        }
+
+        // Form Submissions
+        document.addEventListener('submit', function(e) {
+            if (e.target.id === 'newProjectForm') {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                console.log('New project form submitted:', Object.fromEntries(formData));
+                alert('Project scan started!');
+                closeModal('newProjectModal');
+            }
+            
+            if (e.target.id === 'createRuleForm') {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                console.log('New rule created:', Object.fromEntries(formData));
+                alert('Security rule created successfully!');
+                closeModal('createRuleModal');
+            }
+            
+            if (e.target.id === 'createQualityGateForm') {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                console.log('New quality gate created:', Object.fromEntries(formData));
+                alert('Quality gate created successfully!');
+                closeModal('createQualityGateModal');
+            }
+        });
+    </script>
+</body>
+</html> +5%
+                            </div>
+                        </div>
+                        <div class="metric-label">Security Rating</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 95%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card animate-card">
+                        <div class="metric-value rating-B">
+                            B
+                            <div class="metric-trend trend-stable">
+                                <i class="fas fa-minus"></i> 0%
+                            </div>
+                        </div>
+                        <div class="metric-label">Reliability Rating</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 80%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card animate-card">
+                        <div class="metric-value rating-A">
+                            A
+                            <div class="metric-trend trend-up">
+                                <i class="fas fa-arrow-up"></i> +2%
+                            </div>
+                        </div>
+                        <div class="metric-label">Maintainability</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 90%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card animate-card">
+                        <div class="metric-value quality-gate-OK">
+                            <i class="fas fa-check-circle"></i> PASSED
+                        </div>
+                        <div class="metric-label">Quality Gate</div>
+                    </div>
+                    
+                    <div class="metric-card animate-card">
+                        <div class="metric-value">
+                            23
+                            <div class="metric-trend trend-down">
+                                <i class="fas fa-arrow-down"></i> -12%
+                            </div>
+                        </div>
+                        <div class="metric-label">Total Issues</div>
+                    </div>
+                    
+                    <div class="metric-card animate-card">
+                        <div class="metric-value">
+                            87.5%
+                            <div class="metric-trend trend-up">
+                                <i class="fas fa-arrow-up"></i> +3%
+                            </div>
+                        </div>
+                        <div class="metric-label">Code Coverage</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 87.5%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card animate-card">
+                        <div class="metric-value">
+                            2.3h
+                            <div class="metric-trend trend-down">
+                                <i class="fas fa-arrow-down"></i> -15%
+                            </div>
+                        </div>
+                        <div class="metric-label">Technical Debt</div>
+                    </div>
+                    
+                    <div class="metric-card animate-card">
+                        <div class="metric-value">
+                            5
+                            <div class="metric-trend trend-down">
+                                <i class="fas fa-arrow-down"></i> -3
+                            </div>
+                        </div>
+                        <div class="metric-label">Vulnerabilities</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-chart-line"></i>
+                            Security Trends
+                        </h2>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-secondary btn-sm" onclick="refreshCharts()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="securityTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Recent Critical Issues
+                        </h2>
+                        <button class="btn btn-primary" onclick="showTab('issues')">
+                            <i class="fas fa-eye"></i> View All
+                        </button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Severity</th>
+                                    <th>Rule</th>
+                                    <th>File</th>
+                                    <th>Line</th>
+                                    <th>Message</th>
+                                    <th>Age</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-issues-table">
+                                <tr>
+                                    <td><span class="severity-badge severity-BLOCKER">BLOCKER</span></td>
+                                    <td><code>hardcoded-secrets</code></td>
+                                    <td>auth/config.py</td>
+                                    <td>45</td>
+                                    <td>Hardcoded API key detected in configuration</td>
+                                    <td>2 hours</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="viewIssue('1')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-success btn-sm" onclick="resolveIssue('1')">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="severity-badge severity-CRITICAL">CRITICAL</span></td>
+                                    <td><code>sql-injection</code></td>
+                                    <td>database/queries.py</td>
+                                    <td>123</td>
+                                    <td>Potential SQL injection vulnerability</td>
+                                    <td>5 hours</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="viewIssue('2')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-success btn-sm" onclick="resolveIssue('2')">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="severity-badge severity-MAJOR">MAJOR</span></td>
+                                    <td><code>weak-crypto</code></td>
+                                    <td>utils/encryption.py</td>
+                                    <td>67</td>
+                                    <td>Usage of deprecated MD5 algorithm</td>
+                                    <td>1 day</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="viewIssue('3')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-success btn-sm" onclick="resolveIssue('3')">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects Tab -->
+            <div id="projects-tab" class="tab-content">
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-folder-open"></i>
+                            Project Management
+                        </h2>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-primary" onclick="showNewProjectModal()">
+                                <i class="fas fa-plus"></i> New Scan
+                            </button>
+                            <button class="btn btn-secondary" onclick="importProject()">
+                                <i class="fas fa-upload"></i> Import
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label><i class="fas fa-users"></i> Team:</label>
+                            <select class="filter-select" id="team-filter" onchange="filterProjects()">
+                                <option value="">All Teams</option>
+                                <option value="frontend">Frontend Team</option>
+                                <option value="backend">Backend Team</option>
+                                <option value="mobile">Mobile Team</option>
+                                <option value="devops">DevOps Team</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-heartbeat"></i> Health:</label>
+                            <select class="filter-select" id="health-filter" onchange="filterProjects()">
+                                <option value="">All Status</option>
+                                <option value="excellent">Excellent</option>
+                                <option value="good">Good</option>
+                                <option value="warning">Needs Attention</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-calendar"></i> Last Scan:</label>
+                            <select class="filter-select" id="scan-filter" onchange="filterProjects()">
+                                <option value="">Any Time</option>
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button class="btn btn-secondary" onclick="exportProjects()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="projects-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-project-diagram"></i> Project</th>
+                                    <th><i class="fas fa-users"></i> Team</th>
+                                    <th><i class="fas fa-clock"></i> Last Scan</th>
+                                    <th><i class="fas fa-shield-alt"></i> Security</th>
+                                    <th><i class="fas fa-gate-closed"></i> Quality Gate</th>
+                                    <th><i class="fas fa-bug"></i> Issues</th>
+                                    <th><i class="fas fa-percentage"></i> Coverage</th>
+                                    <th><i class="fas fa-heartbeat"></i> Health</th>
+                                    <th><i class="fas fa-tools"></i> Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-center gap-1">
+                                            <i class="fas fa-react" style="color: #61dafb;"></i>
+                                            <div>
+                                                <div class="project-name">Web Frontend</div>
+                                                <small style="color: #7f8c8d;">React + TypeScript</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Frontend Team</td>
+                                    <td>2 hours ago</td>
+                                    <td><span class="rating-A">A</span></td>
+                                    <td><span class="quality-gate-OK"><i class="fas fa-check-circle"></i> PASSED</span></td>
+                                    <td>
+                                        <span class="severity-badge severity-MINOR">12</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 89%"></div>
+                                        </div>
+                                        <small>89%</small>
+                                    </td>
+                                    <td><i class="fas fa-heart status-online"></i> Excellent</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="scanProject('web-frontend')">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="viewProjectDetails('web-frontend')">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="downloadReport('web-frontend')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-center gap-1">
+                                            <i class="fas fa-server" style="color: #f39c12;"></i>
+                                            <div>
+                                                <div class="project-name">API Backend</div>
+                                                <small style="color: #7f8c8d;">Python Flask</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Backend Team</td>
+                                    <td>1 day ago</td>
+                                    <td><span class="rating-B">B</span></td>
+                                    <td><span class="quality-gate-WARN"><i class="fas fa-exclamation-triangle"></i> WARNING</span></td>
+                                    <td>
+                                        <span class="severity-badge severity-MAJOR">18</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 76%"></div>
+                                        </div>
+                                        <small>76%</small>
+                                    </td>
+                                    <td><i class="fas fa-exclamation-triangle status-warning"></i> Good</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="scanProject('api-backend')">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="viewProjectDetails('api-backend')">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="downloadReport('api-backend')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-center gap-1">
+                                            <i class="fas fa-mobile-alt" style="color: #e74c3c;"></i>
+                                            <div>
+                                                <div class="project-name">Mobile App</div>
+                                                <small style="color: #7f8c8d;">React Native</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Mobile Team</td>
+                                    <td>3 days ago</td>
+                                    <td><span class="rating-D">D</span></td>
+                                    <td><span class="quality-gate-ERROR"><i class="fas fa-times-circle"></i> FAILED</span></td>
+                                    <td>
+                                        <span class="severity-badge severity-CRITICAL">34</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 62%"></div>
+                                        </div>
+                                        <small>62%</small>
+                                    </td>
+                                    <td><i class="fas fa-exclamation-circle status-error"></i> Critical</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" onclick="scanProject('mobile-app')">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="viewProjectDetails('mobile-app')">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="downloadReport('mobile-app')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-center gap-1">
+                                            <i class="fas fa-database" style="color: #27ae60;"></i>
+                                            <div>
+                                                <div class="project-name">Data Pipeline</div>
+                                                <small style="color: #7f8c8d;">Python + Apache Spark</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>Backend Team</td>
+                                    <td>6 hours ago</td>
+                                    <td><span class="rating-A">A</span></td>
+                                    <td><span class="quality-gate-OK"><i class="fas fa-check-circle"></i> PASSED</span></td>
+                                    <td>
+                                        <span class="severity-badge severity-MINOR">7</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 94%"></div>
+                                        </div>
+                                        <small>94%</small>
+                                    </td>
+                                    <td><i class="fas fa-heart status-online"></i> Excellent</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="scanProject('data-pipeline')">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="viewProjectDetails('data-pipeline')">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="downloadReport('data-pipeline')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Issues Tab -->
+            <div id="issues-tab" class="tab-content">
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-bug"></i>
+                            Issue Management
+                        </h2>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-primary" onclick="bulkActions()">
+                                <i class="fas fa-tasks"></i> Bulk Actions
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportIssues()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label><i class="fas fa-exclamation"></i> Severity:</label>
+                            <select class="filter-select" id="severity-filter" onchange="filterIssues()">
+                                <option value="">All Severities</option>
+                                <option value="BLOCKER">Blocker</option>
+                                <option value="CRITICAL">Critical</option>
+                                <option value="MAJOR">Major</option>
+                                <option value="MINOR">Minor</option>
+                                <option value="INFO">Info</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-tag"></i> Type:</label>
+                            <select class="filter-select" id="type-filter" onchange="filterIssues()">
+                                <option value="">All Types</option>
+                                <option value="VULNERABILITY">Vulnerability</option>
+                                <option value="BUG">Bug</option>
+                                <option value="CODE_SMELL">Code Smell</option>
+                                <option value="SECURITY_HOTSPOT">Security Hotspot</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-flag"></i> Status:</label>
+                            <select class="filter-select" id="status-filter" onchange="filterIssues()">
+                                <option value="">All Status</option>
+                                <option value="OPEN">Open</option>
+                                <option value="CONFIRMED">Confirmed</option>
+                                <option value="RESOLVED">Resolved</option>
+                                <option value="FALSE_POSITIVE">False Positive</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-user"></i> Assignee:</label>
+                            <select class="filter-select" id="assignee-filter" onchange="filterIssues()">
+                                <option value="">All Assignees</option>
+                                <option value="unassigned">Unassigned</option>
+                                <option value="john.doe">John Doe</option>
+                                <option value="jane.smith">Jane Smith</option>
+                                <option value="mike.wilson">Mike Wilson</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-project-diagram"></i> Project:</label>
+                            <select class="filter-select" id="project-filter" onchange="filterIssues()">
+                                <option value="">All Projects</option>
+                                <option value="web-frontend">Web Frontend</option>
+                                <option value="api-backend">API Backend</option>
+                                <option value="mobile-app">Mobile App</option>
+                                <option value="data-pipeline">Data Pipeline</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="issues-table">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="select-all-issues" onchange="toggleAllIssues()">
+                                    </th>
+                                    <th><i class="fas fa-exclamation"></i> Severity</th>
+                                    <th><i class="fas fa-tag"></i> Type</th>
+                                    <th><i class="fas fa-list"></i> Rule</th>
+                                    <th><i class="fas fa-file"></i> File</th>
+                                    <th><i class="fas fa-hashtag"></i> Line</th>
+                                    <th><i class="fas fa-flag"></i> Status</th>
+                                    <th><i class="fas fa-user"></i> Assignee</th>
+                                    <th><i class="fas fa-calendar"></i> Created</th>
+                                    <th><i class="fas fa-tools"></i> Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="checkbox" class="issue-checkbox" value="1"></td>
+                                    <td><span class="severity-badge severity-BLOCKER">BLOCKER</span></td>
+                                    <td>Vulnerability</td>
+                                    <td><code>hardcoded-secrets</code></td>
+                                    <td>auth/config.py</td>
+                                    <td>45</td>
+                                    <td><span class="status-badge status-OPEN">OPEN</span></td>
+                                    <td>
+                                        <div class="d-flex align-center gap-1">
+                                            <i class="fas fa-user-circle" style="color: #95a5a6;"></i>
+                                            Unassigned
+                                        </div>
+                                    </td>
+                                    <td>2 hours ago</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="viewIssueDetails('1')" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="assignIssue('1')" title="Assign">
+                                            <i class="fas fa-user-plus"></i>
+                                        </button>
+                                        <button class="btn btn-success btn-sm" onclick="resolveIssue('1')" title="Resolve">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" class="issue-checkbox" value="2"></td>
+                                    <td><span class="severity-badge severity-CRITICAL">CRITICAL</span></td>
+                                    <td>Vulnerability</td>
+                                    <td><code>sql-injection</code></td>
+                                    <td>database/queries.py</td>
+                                    <td>123</td>
+                                    <td><span class="status-badge status-CONFIRMED">CONFIRMED</span></td>
+                                    <td>
+                                        <div class="d-flex align-center gap-1">
+                                            <i class="fas fa-user-circle" style="color: #3498db;"></i>
+                                            John Doe
+                                        </div>
+                                    </td>
+                                    <td>5 hours ago</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="viewIssueDetails('2')" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="assignIssue('2')" title="Reassign">
+                                            <i class="fas fa-user-edit"></i>
+                                        </button>
+                                        <button class="btn btn-success btn-sm" onclick="resolveIssue('2')" title="Resolve">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" class="issue-checkbox" value="3"></td>
+                                    <td><span class="severity-badge severity-MAJOR">MAJOR</span></td>
+                                    <td>Bug</td>
+                                    <td><code>null-pointer-risk</code></td>
+                                    <td>utils/helpers.py</td>
+                                    <td>156</td>
+                                    <td><span class="status-badge status-OPEN">OPEN</span></td>
+                                    <td>
+                                        <div class="d-flex align-center gap-1">
+                                            <i class="fas fa-user-circle" style="color: #e74c3c;"></i>
+                                            Jane Smith
+                                        </div>
+                                    </td>
+                                    <td>1 day ago</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="viewIssueDetails('3')" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="assignIssue('3')" title="Reassign">
+                                            <i class="fas fa-user-edit"></i>
+                                        </button>
+                                        <button class="btn btn-success btn-sm" onclick="resolveIssue('3')" title="Resolve">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" class="issue-checkbox" value="4"></td>
+                                    <td><span class="severity-badge severity-MINOR">MINOR</span></td>
+                                    <td>Code Smell</td>
+                                    <td><code>unused-import</code></td>
+                                    <td>components/Header.tsx</td>
+                                    <td>12</td>
+                                    <td><span class="status-badge status-RESOLVED">RESOLVED</span></td>
+                                    <td>
+                                        <div class="d-flex align-center gap-1">
+                                            <i class="fas fa-user-circle" style="color: #f39c12;"></i>
+                                            Mike Wilson
+                                        </div>
+                                    </td>
+                                    <td>2 days ago</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="viewIssueDetails('4')" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="reopenIssue('4')" title="Reopen">
+                                            <i class="fas fa-redo"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules Tab -->
+            <div id="rules-tab" class="tab-content">
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-list-check"></i>
+                            Security Rules Management
+                        </h2>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-primary" onclick="showCreateRuleModal()">
+                                <i class="fas fa-plus"></i> Create Rule
+                            </button>
+                            <button class="btn btn-secondary" onclick="importRules()">
+                                <i class="fas fa-upload"></i> Import
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportRules()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label><i class="fas fa-folder"></i> Category:</label>
+                            <select class="filter-select" id="rule-category-filter" onchange="filterRules()">
+                                <option value="">All Categories</option>
+                                <option value="security">Security</option>
+                                <option value="reliability">Reliability</option>
+                                <option value="maintainability">Maintainability</option>
+                                <option value="performance">Performance</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-code"></i> Language:</label>
+                            <select class="filter-select" id="rule-language-filter" onchange="filterRules()">
+                                <option value="">All Languages</option>
+                                <option value="python">Python</option>
+                                <option value="javascript">JavaScript</option>
+                                <option value="java">Java</option>
+                                <option value="csharp">C#</option>
+                                <option value="php">PHP</option>
+                                <option value="*">All Languages</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-toggle-on"></i> Status:</label>
+                            <select class="filter-select" id="rule-status-filter" onchange="filterRules()">
+                                <option value="">All Status</option>
+                                <option value="enabled">Enabled</option>
+                                <option value="disabled">Disabled</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-user"></i> Source:</label>
+                            <select class="filter-select" id="rule-source-filter" onchange="filterRules()">
+                                <option value="">All Sources</option>
+                                <option value="built-in">Built-in</option>
+                                <option value="custom">Custom</option>
+                                <option value="imported">Imported</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="rules-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-id-badge"></i> Rule ID</th>
+                                    <th><i class="fas fa-tag"></i> Name</th>
+                                    <th><i class="fas fa-code"></i> Language</th>
+                                    <th><i class="fas fa-folder"></i> Category</th>
+                                    <th><i class="fas fa-exclamation"></i> Severity</th>
+                                    <th><i class="fas fa-bug"></i> Type</th>
+                                    <th><i class="fas fa-toggle-on"></i> Status</th>
+                                    <th><i class="fas fa-search"></i> Issues Found</th>
+                                    <th><i class="fas fa-tools"></i> Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>hardcoded-secrets</code></td>
+                                    <td>Hardcoded Secrets Detection</td>
+                                    <td>
+                                        <span class="d-flex align-center gap-1">
+                                            <i class="fas fa-globe"></i> All
+                                        </span>
+                                    </td>
+                                    <td>Security</td>
+                                    <td><span class="severity-badge severity-CRITICAL">CRITICAL</span></td>
+                                    <td>Vulnerability</td>
+                                    <td>
+                                        <span class="d-flex align-center gap-1" style="color: #27ae60;">
+                                            <i class="fas fa-check-circle"></i> Enabled
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="metric-value" style="font-size: 1.2rem; color: #e74c3c;">5</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="editRule('hardcoded-secrets')" title="Edit Rule">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="testRule('hardcoded-secrets')" title="Test Rule">
+                                            <i class="fas fa-flask"></i>
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="toggleRule('hardcoded-secrets')" title="Disable">
+                                            <i class="fas fa-toggle-off"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="duplicateRule('hardcoded-secrets')" title="Duplicate">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><code>sql-injection</code></td>
+                                    <td>SQL Injection Detection</td>
+                                    <td>
+                                        <span class="d-flex align-center gap-1">
+                                            <i class="fab fa-python"></i> Python
+                                        </span>
+                                    </td>
+                                    <td>Security</td>
+                                    <td><span class="severity-badge severity-CRITICAL">CRITICAL</span></td>
+                                    <td>Vulnerability</td>
+                                    <td>
+                                        <span class="d-flex align-center gap-1" style="color: #27ae60;">
+                                            <i class="fas fa-check-circle"></i> Enabled
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="metric-value" style="font-size: 1.2rem; color: #e74c3c;">3</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="editRule('sql-injection')" title="Edit Rule">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="testRule('sql-injection')" title="Test Rule">
+                                            <i class="fas fa-flask"></i>
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="toggleRule('sql-injection')" title="Disable">
+                                            <i class="fas fa-toggle-off"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="duplicateRule('sql-injection')" title="Duplicate">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><code>weak-crypto</code></td>
+                                    <td>Weak Cryptographic Algorithms</td>
+                                    <td>
+                                        <span class="d-flex align-center gap-1">
+                                            <i class="fas fa-globe"></i> All
+                                        </span>
+                                    </td>
+                                    <td>Security</td>
+                                    <td><span class="severity-badge severity-MAJOR">MAJOR</span></td>
+                                    <td>Vulnerability</td>
+                                    <td>
+                                        <span class="d-flex align-center gap-1" style="color: #e74c3c;">
+                                            <i class="fas fa-times-circle"></i> Disabled
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="metric-value" style="font-size: 1.2rem; color: #95a5a6;">0</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="editRule('weak-crypto')" title="Edit Rule">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="testRule('weak-crypto')" title="Test Rule">
+                                            <i class="fas fa-flask"></i>
+                                        </button>
+                                        <button class="btn btn-success btn-sm" onclick="toggleRule('weak-crypto')" title="Enable">
+                                            <i class="fas fa-toggle-on"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="duplicateRule('weak-crypto')" title="Duplicate">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><code>xss-vulnerability</code></td>
+                                    <td>Cross-Site Scripting (XSS)</td>
+                                    <td>
+                                        <span class="d-flex align-center gap-1">
+                                            <i class="fab fa-js-square"></i> JavaScript
+                                        </span>
+                                    </td>
+                                    <td>Security</td>
+                                    <td><span class="severity-badge severity-MAJOR">MAJOR</span></td>
+                                    <td>Vulnerability</td>
+                                    <td>
+                                        <span class="d-flex align-center gap-1" style="color: #27ae60;">
+                                            <i class="fas fa-check-circle"></i> Enabled
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="metric-value" style="font-size: 1.2rem; color: #f39c12;">8</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="editRule('xss-vulnerability')" title="Edit Rule">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="testRule('xss-vulnerability')" title="Test Rule">
+                                            <i class="fas fa-flask"></i>
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="toggleRule('xss-vulnerability')" title="Disable">
+                                            <i class="fas fa-toggle-off"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="duplicateRule('xss-vulnerability')" title="Duplicate">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quality Gates Tab -->
+            <div id="quality-gates-tab" class="tab-content">
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-gate-open"></i>
+                            Quality Gates Configuration
+                        </h2>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-primary" onclick="showCreateQualityGateModal()">
+                                <i class="fas fa-plus"></i> Create Quality Gate
+                            </button>
+                            <button class="btn btn-secondary" onclick="importQualityGates()">
+                                <i class="fas fa-upload"></i> Import
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="quality-gate-card animate-card">
+                        <div class="gate-header">
+                            <div class="d-flex align-center gap-1">
+                                <h3 class="gate-name">
+                                    <i class="fas fa-shield-alt"></i>
+                                    Security-Focused Gate
+                                </h3>
+                                <span class="gate-default">DEFAULT</span>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-primary btn-sm" onclick="editQualityGate('security-gate')">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="duplicateQualityGate('security-gate')">
+                                    <i class="fas fa-copy"></i> Duplicate
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="testQualityGate('security-gate')">
+                                    <i class="fas fa-play"></i> Test
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="gate-conditions">
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <strong>Security Rating</strong> ≤ C
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-pass">
+                                        <i class="fas fa-check-circle"></i>
+                                        Current: A
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-bug"></i>
+                                    <strong>Blocker Issues</strong> = 0
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-fail">
+                                        <i class="fas fa-times-circle"></i>
+                                        Current: 1
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Critical Issues</strong> = 0
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-fail">
+                                        <i class="fas fa-times-circle"></i>
+                                        Current: 2
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-percentage"></i>
+                                    <strong>Coverage</strong> ≥ 80%
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-pass">
+                                        <i class="fas fa-check-circle"></i>
+                                        Current: 87%
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-copy"></i>
+                                    <strong>Duplications</strong> ≤ 3%
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-pass">
+                                        <i class="fas fa-check-circle"></i>
+                                        Current: 2.1%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="gate-overall-status gate-status-fail">
+                            <i class="fas fa-times-circle"></i>
+                            <strong>QUALITY GATE FAILED</strong>
+                            <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                                3 critical security issues must be resolved before deployment
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quality-gate-card animate-card">
+                        <div class="gate-header">
+                            <div class="d-flex align-center gap-1">
+                                <h3 class="gate-name">
+                                    <i class="fas fa-wrench"></i>
+                                    Development Gate
+                                </h3>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-primary btn-sm" onclick="editQualityGate('dev-gate')">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="duplicateQualityGate('dev-gate')">
+                                    <i class="fas fa-copy"></i> Duplicate
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="testQualityGate('dev-gate')">
+                                    <i class="fas fa-play"></i> Test
+                                </button>
+                                <button class="btn btn-success btn-sm" onclick="setDefaultGate('dev-gate')">
+                                    <i class="fas fa-star"></i> Set Default
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="gate-conditions">
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <strong>Security Rating</strong> ≤ D
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-pass">
+                                        <i class="fas fa-check-circle"></i>
+                                        Current: A
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-percentage"></i>
+                                    <strong>Coverage</strong> ≥ 70%
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-pass">
+                                        <i class="fas fa-check-circle"></i>
+                                        Current: 87%
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-copy"></i>
+                                    <strong>Duplications</strong> ≤ 5%
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-pass">
+                                        <i class="fas fa-check-circle"></i>
+                                        Current: 2.1%
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-clock"></i>
+                                    <strong>Technical Debt</strong> ≤ 5h
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-pass">
+                                        <i class="fas fa-check-circle"></i>
+                                        Current: 2.3h
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="gate-overall-status gate-status-pass">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>QUALITY GATE PASSED</strong>
+                            <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                                All quality conditions are met - ready for deployment
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quality-gate-card animate-card">
+                        <div class="gate-header">
+                            <div class="d-flex align-center gap-1">
+                                <h3 class="gate-name">
+                                    <i class="fas fa-rocket"></i>
+                                    Production Gate
+                                </h3>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-primary btn-sm" onclick="editQualityGate('prod-gate')">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="duplicateQualityGate('prod-gate')">
+                                    <i class="fas fa-copy"></i> Duplicate
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="testQualityGate('prod-gate')">
+                                    <i class="fas fa-play"></i> Test
+                                </button>
+                                <button class="btn btn-success btn-sm" onclick="setDefaultGate('prod-gate')">
+                                    <i class="fas fa-star"></i> Set Default
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="gate-conditions">
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <strong>Security Rating</strong> ≤ B
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-pass">
+                                        <i class="fas fa-check-circle"></i>
+                                        Current: A
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-tools"></i>
+                                    <strong>Reliability Rating</strong> ≤ B
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-pass">
+                                        <i class="fas fa-check-circle"></i>
+                                        Current: B
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-bug"></i>
+                                    <strong>Blocker Issues</strong> = 0
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-fail">
+                                        <i class="fas fa-times-circle"></i>
+                                        Current: 1
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="condition-item">
+                                <div class="condition-metric">
+                                    <i class="fas fa-percentage"></i>
+                                    <strong>Coverage</strong> ≥ 90%
+                                </div>
+                                <div class="condition-status">
+                                    <span class="condition-fail">
+                                        <i class="fas fa-times-circle"></i>
+                                        Current: 87%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="gate-overall-status gate-status-fail">
+                            <i class="fas fa-times-circle"></i>
+                            <strong>QUALITY GATE FAILED</strong>
+                            <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                                High-quality standards required for production deployment
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Tab -->
+            <div id="leaderboard-tab" class="tab-content">
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-trophy"></i>
+                            Project Security Leaderboard
+                        </h2>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-primary" onclick="refreshLeaderboard()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportLeaderboard()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                            <button class="btn btn-secondary" onclick="viewTeamRankings()">
+                                <i class="fas fa-users"></i> Team View
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 2rem;">
+                        <div class="metric-card">
+                            <div class="metric-value">15</div>
+                            <div class="metric-label">Total Projects</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" style="color: #27ae60;">8</div>
+                            <div class="metric-label">Healthy Projects</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" style="color: #f39c12;">4</div>
+                            <div class="metric-label">Need Attention</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" style="color: #e74c3c;">3</div>
+                            <div class="metric-label">Critical Issues</div>
+                        </div>
+                    </div>
+
+                    <div class="leaderboard-item animate-card">
+                        <div class="rank-badge rank-1">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="project-info">
+                            <div class="project-name">Payment Service API</div>
+                            <div class="project-details">
+                                <i class="fas fa-users"></i> Backend Team •
+                                <i class="fas fa-code"></i> Python •
+                                <i class="fas fa-clock"></i> Last scanned 1 hour ago
+                            </div>
+                            <div class="mt-1">
+                                <span class="severity-badge severity-INFO" style="margin-right: 0.5rem;">0 Issues</span>
+                                <span class="rating-A">Security: A</span> •
+                                <span class="quality-gate-OK">Quality Gate: PASSED</span>
+                            </div>
+                        </div>
+                        <div class="score-display">
+                            <div class="score-value">96.5</div>
+                            <div class="score-grade">Grade: A+</div>
+                            <div class="metric-trend trend-up">
+                                <i class="fas fa-arrow-up"></i> +2.1%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="leaderboard-item animate-card">
+                        <div class="rank-badge rank-2">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                        <div class="project-info">
+                            <div class="project-name">User Dashboard</div>
+                            <div class="project-details">
+                                <i class="fas fa-users"></i> Frontend Team •
+                                <i class="fas fa-code"></i> React + TypeScript •
+                                <i class="fas fa-clock"></i> Last scanned 2 hours ago
+                            </div>
+                            <div class="mt-1">
+                                <span class="severity-badge severity-MINOR" style="margin-right: 0.5rem;">12 Issues</span>
+                                <span class="rating-A">Security: A</span> •
+                                <span class="quality-gate-OK">Quality Gate: PASSED</span>
+                            </div>
+                        </div>
+                        <div class="score-display">
+                            <div class="score-value">92.1</div>
+                            <div class="score-grade">Grade: A</div>
+                            <div class="metric-trend trend-stable">
+                                <i class="fas fa-minus"></i> +0.3%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="leaderboard-item animate-card">
+                        <div class="rank-badge rank-3">
+                            <i class="fas fa-award"></i>
+                        </div>
+                        <div class="project-info">
+                            <div class="project-name">API Gateway</div>
+                            <div class="project-details">
+                                <i class="fas fa-users"></i> Infrastructure Team •
+                                <i class="fas fa-code"></i> Java Spring •
+                                <i class="fas fa-clock"></i> Last scanned 6 hours ago
+                            </div>
+                            <div class="mt-1">
+                                <span class="severity-badge severity-MAJOR" style="margin-right: 0.5rem;">8 Issues</span>
+                                <span class="rating-B">Security: B</span> •
+                                <span class="quality-gate-OK">Quality Gate: PASSED</span>
+                            </div>
+                        </div>
+                        <div class="score-display">
+                            <div class="score-value">89.7</div>
+                            <div class="score-grade">Grade: B+</div>
+                            <div class="metric-trend trend-up">
+                                <i class="fas fa-arrow-up"></i>
