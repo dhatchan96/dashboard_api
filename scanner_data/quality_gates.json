@@ -47,13 +47,5 @@
       }
     ],
     "is_default": true
-  },
-  {
-    "id": "5cbfeda1-164e-44b5-a54f-22266875befc",
-    "name": "asd",
-    "conditions": [
-      "asdasd"
-    ],
-    "is_default": false
   }
 ]

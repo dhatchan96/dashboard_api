@@ -1,0 +1,11 @@
+[
+  {
+    "scan_id": "id_h3b4enoi3",
+    "project_id": "upload-scan-1752660985796",
+    "project_name": "Quick Security Scan",
+    "timestamp": "2025-07-16T15:46:26.442425",
+    "files_scanned": 12,
+    "total_issues": 0,
+    "quality_gate_passed": true
+  }
+]

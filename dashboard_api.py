@@ -4,18 +4,21 @@ Enhanced Security Scanner - Dashboard API
 Flask API for SonarQube-equivalent dashboard functionality
 """
 
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template_string, send_file
 from flask_cors import CORS
 import json
 import os
+import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import uuid
+import tempfile
+from pathlib import Path
 
 # Import our main scanner components
 from security_scanner_main import (
     SecurityScanner, SecurityRule, QualityGate, SecurityIssue,
-    MetricsCalculator
+    MetricsCalculator, ScanResult
 )
 
 app = Flask(__name__)
@@ -947,6 +950,20 @@ def create_quality_gate():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/quality-gates/<gate_id>', methods=['DELETE'])
+def delete_quality_gate(gate_id):
+    """Delete a quality gate"""
+    try:
+        if gate_id not in scanner.quality_gates.gates:
+            return jsonify({'error': 'Quality gate not found'}), 404
+
+        del scanner.quality_gates.gates[gate_id]
+        scanner.quality_gates.save_gates()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+
 @app.route('/api/scan-history')
 def get_scan_history():
     """Get scan history"""
@@ -1241,6 +1258,590 @@ def health_check():
         'total_issues': len(scanner.issue_manager.issues),
         'scan_history_count': len(scanner.scan_history)
     })
+
+# @app.route('/api/scan/files', methods=['POST'])
+# def scan_uploaded_files():
+#     try:
+#         data = request.get_json()
+#         scan_id = data.get('scan_id', str(uuid.uuid4()))
+#         scan_type = data.get('scan_type', 'quick')
+#         file_contents = data.get('file_contents', [])
+#         project_id = data.get('project_id', f'upload-scan-{int(datetime.now().timestamp())}')
+#         project_name = data.get('project_name', 'File Upload Scan')
+#         timestamp = datetime.utcnow().isoformat()
+
+#         if not file_contents:
+#             return jsonify({'error': 'No files provided'}), 400
+
+#         issues = []
+#         lines_of_code = 0
+#         file_results = []
+
+#         with tempfile.TemporaryDirectory() as temp_dir:
+#             temp_path = Path(temp_dir)
+#             for file_data in file_contents:
+#                 file_path = temp_path / file_data['name']
+#                 file_path.parent.mkdir(parents=True, exist_ok=True)
+
+#                 with open(file_path, 'w', encoding='utf-8') as f:
+#                     f.write(file_data['content'])
+
+#                 content = file_data['content']
+#                 lines = content.splitlines()
+#                 loc = len(lines)
+#                 lines_of_code += loc
+#                 language = file_data['type']
+
+#                 rules = scanner.rules_engine.get_enabled_rules(language)
+#                 file_issues = scanner._scan_file_with_rules(file_data['name'], content, rules)
+#                 issues.extend(file_issues)
+
+#                 file_results.append({
+#                     "file_id": file_data['id'],
+#                     "file_name": file_data['name'],
+#                     "file_type": language,
+#                     "lines_scanned": loc,
+#                     "issues_count": len(file_issues),
+#                     "critical_issues": len([i for i in file_issues if i.severity == "CRITICAL"]),
+#                     "issues": [asdict(i) for i in file_issues],
+#                     "scan_status": "completed"
+#                 })
+
+#         # Metrics
+#         coverage = 85.0
+#         duplications = 2.0
+#         tech_debt = MetricsCalculator.calculate_technical_debt(issues)
+#         security_rating = MetricsCalculator.calculate_security_rating(issues)
+#         reliability_rating = MetricsCalculator.calculate_reliability_rating(issues)
+#         maintainability_rating = MetricsCalculator.calculate_maintainability_rating(tech_debt, lines_of_code)
+
+#         metrics = {
+#             "security_rating": ord(security_rating) - ord('A') + 1,
+#             "reliability_rating": ord(reliability_rating) - ord('A') + 1,
+#             "sqale_rating": ord(maintainability_rating) - ord('A') + 1,
+#             "coverage": coverage,
+#             "duplicated_lines_density": duplications,
+#             "blocker_violations": len([i for i in issues if i.severity == "BLOCKER"]),
+#             "critical_violations": len([i for i in issues if i.severity == "CRITICAL"])
+#         }
+
+#         default_gate = next((g for g in scanner.quality_gates.gates.values() if g.is_default), None)
+#         gate_result = scanner.quality_gates.evaluate_gate(default_gate.id, metrics) if default_gate else {}
+#         gate_status = gate_result.get("status", "OK")
+
+#         # Save scan
+#         scan_result = ScanResult(
+#             project_id=project_id,
+#             scan_id=scan_id,
+#             timestamp=timestamp,
+#             duration_ms=0,
+#             files_scanned=len(file_contents),
+#             lines_of_code=lines_of_code,
+#             issues=issues,
+#             coverage=coverage,
+#             duplications=duplications,
+#             maintainability_rating=maintainability_rating,
+#             reliability_rating=reliability_rating,
+#             security_rating=security_rating,
+#             quality_gate_status=gate_status
+#         )
+
+#         scanner.scan_history.append(scan_result)
+#         scanner.save_scan_history()
+#         for issue in issues:
+#             scanner.issue_manager.issues[issue.id] = issue
+#         scanner.issue_manager.save_issues()
+
+#         return jsonify({
+#             "scan_id": scan_id,
+#             "project_id": project_id,
+#             "project_name": project_name,
+#             "timestamp": timestamp,
+#             "scan_type": scan_type,
+#             "duration_ms": 0,
+#             "files_scanned": len(file_contents),
+#             "lines_of_code": lines_of_code,
+#             "file_results": file_results,
+#             "summary": {
+#                 "total_issues": len(issues),
+#                 "critical_issues": len([i for i in issues if i.severity == "CRITICAL"]),
+#                 "quality_gate_passed": gate_status == "OK",
+#                 "security_rating": security_rating,
+#                 "technical_debt_hours": tech_debt // 60
+#             },
+#             "metrics": {
+#                 "coverage": coverage,
+#                 "duplications": duplications,
+#                 "lines_of_code": lines_of_code,
+#                 "maintainability_rating": maintainability_rating,
+#                 "reliability_rating": reliability_rating,
+#                 "security_rating": security_rating,
+#                 "technical_debt_hours": tech_debt // 60
+#             },
+#             "quality_gate": {
+#                 "status": gate_status,
+#                 "message": "Quality Gate Passed" if gate_status == "OK" else "Quality Gate Failed"
+#             },
+#             "issue_breakdown": {
+#                 "by_file": {f["file_name"]: f["issues_count"] for f in file_results},
+#                 "by_severity": {},
+#                 "by_type": {}
+#             }
+#         })
+
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/scan/files', methods=['POST'])
+def scan_uploaded_files():
+    try:
+        data = request.get_json()
+        scan_id = data.get('scan_id', str(uuid.uuid4()))
+        scan_type = data.get('scan_type', 'quick')
+        file_contents = data.get('file_contents', [])
+        project_id = data.get('project_id', f'upload-scan-{int(datetime.now().timestamp())}')
+        project_name = data.get('project_name', 'File Upload Scan')
+
+        if not file_contents:
+            return jsonify({'error': 'No files provided'}), 400
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            file_paths = []
+
+            for file_data in file_contents:
+                file_path = temp_path / file_data['name']
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(file_data['content'])
+
+                file_paths.append({
+                    'id': file_data['id'],
+                    'name': file_data['name'],
+                    'path': str(file_path),
+                    'type': file_data['type']
+                })
+
+            # ✅ Now delegate to your core scan function
+            scan_result = perform_file_scan(
+                scan_id=scan_id,
+                project_id=project_id,
+                project_name=project_name,
+                file_paths=file_paths,
+                scan_type=scan_type
+            )
+
+            return jsonify(scan_result)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+
+def perform_file_scan(scan_id: str, project_id: str, project_name: str, 
+                      file_paths: list, scan_type: str = 'quick') -> dict:
+    """Perform security scan on uploaded files and persist results into scanner."""
+    start_time = datetime.now()
+    total_issues = []
+    file_results = []
+    total_lines = 0
+
+    for file_info in file_paths:
+        try:
+            file_path = file_info['path']
+            file_name = file_info['name']
+            file_type = file_info['type']
+            file_id = file_info['id']
+
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+
+            lines = content.splitlines()
+            file_lines = len(lines)
+            total_lines += file_lines
+
+            applicable_rules = scanner.rules_engine.get_enabled_rules(file_type)
+            file_issues = scan_file_content(file_name, content, applicable_rules, file_id)
+
+            file_result = {
+                'file_id': file_id,
+                'file_name': file_name,
+                'file_type': file_type,
+                'lines_scanned': file_lines,
+                'issues': [format_issue_for_response(issue) for issue in file_issues],
+                'issues_count': len(file_issues),
+                'critical_issues': len([i for i in file_issues if i.severity in ['BLOCKER', 'CRITICAL']]),
+                'scan_status': 'completed'
+            }
+
+            file_results.append(file_result)
+            total_issues.extend(file_issues)
+        except Exception as e:
+            file_results.append({
+                'file_id': file_info['id'],
+                'file_name': file_info['name'],
+                'file_type': file_info['type'],
+                'scan_status': 'error',
+                'error_message': str(e)
+            })
+
+    # Compute metrics
+    tech_debt = MetricsCalculator.calculate_technical_debt(total_issues)
+    security_rating = MetricsCalculator.calculate_security_rating(total_issues)
+    reliability_rating = MetricsCalculator.calculate_reliability_rating(total_issues)
+    maintainability_rating = MetricsCalculator.calculate_maintainability_rating(tech_debt, total_lines)
+    coverage = 85.0
+    duplications = 2.0
+
+    metrics = {
+        'security_rating': ord(security_rating) - ord('A') + 1,
+        'reliability_rating': ord(reliability_rating) - ord('A') + 1,
+        'sqale_rating': ord(maintainability_rating) - ord('A') + 1,
+        'coverage': coverage,
+        'duplicated_lines_density': duplications,
+        'blocker_violations': len([i for i in total_issues if i.severity == "BLOCKER"]),
+        'critical_violations': len([i for i in total_issues if i.severity == "CRITICAL"])
+    }
+
+    default_gate = next((g for g in scanner.quality_gates.gates.values() if g.is_default), None)
+    gate_result = scanner.quality_gates.evaluate_gate(default_gate.id, metrics) if default_gate else {}
+    gate_status = gate_result.get("status", "OK")
+
+    duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+    timestamp = start_time.isoformat()
+
+    # Construct ScanResult
+    scan_result_obj = ScanResult(
+        project_id=project_id,
+        scan_id=scan_id,
+        timestamp=timestamp,
+        duration_ms=duration_ms,
+        files_scanned=len(file_paths),
+        lines_of_code=total_lines,
+        issues=total_issues,
+        coverage=coverage,
+        duplications=duplications,
+        maintainability_rating=maintainability_rating,
+        reliability_rating=reliability_rating,
+        security_rating=security_rating,
+        quality_gate_status=gate_status
+    )
+
+    # ✅ Save to scanner (history + issues)
+    scanner.scan_history.append(scan_result_obj)
+    scanner.save_scan_history()
+
+    for issue in total_issues:
+        scanner.issue_manager.issues[issue.id] = issue
+    scanner.issue_manager.save_issues()
+
+    # Return JSON-serializable response
+    return {
+        'scan_id': scan_id,
+        'project_id': project_id,
+        'project_name': project_name,
+        'scan_type': scan_type,
+        'timestamp': timestamp,
+        'duration_ms': duration_ms,
+        'files_scanned': len(file_paths),
+        'lines_of_code': total_lines,
+        'file_results': file_results,
+        'summary': {
+            'total_issues': len(total_issues),
+            'critical_issues': len([i for i in total_issues if i.severity in ['BLOCKER', 'CRITICAL']]),
+            'security_rating': security_rating,
+            'quality_gate_passed': gate_status == "OK",
+            'technical_debt_hours': tech_debt // 60
+        },
+        'metrics': {
+            'coverage': coverage,
+            'duplications': duplications,
+            'lines_of_code': total_lines,
+            'maintainability_rating': maintainability_rating,
+            'reliability_rating': reliability_rating,
+            'security_rating': security_rating,
+            'technical_debt_hours': tech_debt // 60
+        },
+        'quality_gate': {
+            'status': gate_status,
+            'message': 'Quality Gate Passed' if gate_status == 'OK' else 'Quality Gate Failed'
+        },
+        'issue_breakdown': {
+            'by_file': {f['file_name']: f['issues_count'] for f in file_results},
+            'by_severity': {},  # Optionally populate
+            'by_type': {}       # Optionally populate
+        }
+    }
+
+
+def format_issue_for_response(issue) -> dict:
+    """Format issue for JSON response"""
+    return {
+        'id': issue.id,
+        'rule_id': issue.rule_id,
+        'line_number': issue.line_number,
+        'column': issue.column,
+        'message': issue.message,
+        'severity': issue.severity,
+        'type': issue.type,
+        'code_snippet': issue.code_snippet,
+        'suggested_fix': issue.suggested_fix,
+        'effort_minutes': getattr(issue, 'effort', 0)
+    }
+
+def scan_file_content(file_name: str, content: str, rules: list, file_id: str) -> list:
+    """Scan file content with security rules"""
+    import re
+    issues = []
+    lines = content.splitlines()
+
+    for rule in rules:
+        try:
+            pattern = re.compile(rule.pattern, re.IGNORECASE | re.MULTILINE)
+
+            for line_num, line in enumerate(lines, 1):
+                matches = pattern.finditer(line)
+                for match in matches:
+                    issue = scanner.issue_manager.create_issue(
+                        rule_id=rule.id,
+                        file_path=file_name,
+                        line_number=line_num,
+                        column=match.start() + 1,
+                        message=rule.description,
+                        severity=rule.severity,
+                        issue_type=rule.type,
+                        code_snippet=line.strip(),
+                        suggested_fix=generate_fix_suggestion(rule, line.strip())
+                    )
+                    issue.effort = rule.remediation_effort
+                    issues.append(issue)
+
+        except re.error as e:
+            print(f"⚠️ Invalid regex in rule {rule.id}: {e}")
+
+    return issues
+
+
+def generate_fix_suggestion(rule, code_snippet: str) -> str:
+    """Generate specific fix suggestions based on rule and code"""
+    suggestions = {
+        'python-hardcoded-secrets': f"Move the hardcoded value to environment variables: os.getenv('SECRET_KEY')",
+        'python-sql-injection': "Use parameterized queries: cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))",
+        'javascript-eval-usage': "Replace eval() with JSON.parse() for data or safer alternatives",
+        'python-weak-crypto': "Replace with secure algorithms: hashlib.sha256() or hashlib.sha3_256()",
+        'cross-lang-time-bomb': "Remove time-based logic or use proper scheduling systems"
+    }
+    
+    base_suggestion = suggestions.get(rule.id, "Review and fix according to security best practices")
+    
+    # Add context-specific suggestions
+    if 'password' in code_snippet.lower():
+        return f"{base_suggestion}. Consider using secure password hashing with bcrypt or argon2."
+    elif 'key' in code_snippet.lower():
+        return f"{base_suggestion}. Use a secure key management service."
+    elif 'token' in code_snippet.lower():
+        return f"{base_suggestion}. Generate tokens securely and store them encrypted."
+    
+    return base_suggestion
+
+@app.route('/api/scan/<scan_id>/export')
+def export_scan_result(scan_id):
+    try:
+        scan_file = scanner.data_dir / f"scan_{scan_id}.json"
+        if not scan_file.exists():
+            return jsonify({'error': 'Scan result not found'}), 404
+        return send_file(
+            scan_file,
+            as_attachment=True,
+            download_name=f'security_scan_{scan_id}.json',
+            mimetype='application/json'
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/scan/<scan_id>/report')
+def get_scan_report(scan_id):
+    try:
+        scan_file = scanner.data_dir / f"scan_{scan_id}.json"
+        if not scan_file.exists():
+            return jsonify({'error': 'Scan result not found'}), 404
+        with open(scan_file, 'r') as f:
+            scan_data = json.load(f)
+        return generate_scan_report_html(scan_data), 200, {'Content-Type': 'text/html'}
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def generate_scan_report_html(scan_data: dict) -> str:
+    """Generate comprehensive HTML report"""
+    
+    summary = scan_data['summary']
+    metrics = scan_data['metrics']
+    file_results = scan_data['file_results']
+    
+    # Calculate additional statistics
+    total_files = len(file_results)
+    files_with_issues = len([f for f in file_results if f.get('issues_count', 0) > 0])
+    
+    report_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Security Scan Report - {scan_data['project_name']}</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            .header {{ background: #2c3e50; color: white; padding: 20px; border-radius: 8px; }}
+            .summary {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }}
+            .metric {{ background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }}
+            .metric-value {{ font-size: 2rem; font-weight: bold; margin-bottom: 5px; }}
+            .metric-label {{ color: #666; font-size: 0.9rem; }}
+            .section {{ margin: 30px 0; }}
+            .file-item {{ background: white; border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 8px; }}
+            .issue {{ background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin: 5px 0; }}
+            .issue.critical {{ border-left-color: #dc3545; background: #f8d7da; }}
+            .issue.major {{ border-left-color: #fd7e14; background: #fff3cd; }}
+            .severity {{ padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }}
+            .severity-CRITICAL {{ background: #dc3545; color: white; }}
+            .severity-MAJOR {{ background: #fd7e14; color: white; }}
+            .severity-MINOR {{ background: #17a2b8; color: white; }}
+            .code {{ background: #f8f9fa; padding: 5px; border-radius: 4px; font-family: monospace; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Security Scan Report</h1>
+            <p>Project: {scan_data['project_name']}</p>
+            <p>Scan ID: {scan_data['scan_id']}</p>
+            <p>Date: {datetime.fromisoformat(scan_data['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}</p>
+        </div>
+        
+        <div class="summary">
+            <div class="metric">
+                <div class="metric-value">{summary['total_issues']}</div>
+                <div class="metric-label">Total Issues</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">{summary['critical_issues']}</div>
+                <div class="metric-label">Critical Issues</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">{metrics['security_rating']}</div>
+                <div class="metric-label">Security Rating</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">{'PASSED' if summary['quality_gate_passed'] else 'FAILED'}</div>
+                <div class="metric-label">Quality Gate</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">{total_files}</div>
+                <div class="metric-label">Files Scanned</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">{files_with_issues}</div>
+                <div class="metric-label">Files with Issues</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>File Analysis Results</h2>
+    """
+    
+    for file_result in file_results:
+        issues_count = file_result.get('issues_count', 0)
+        file_html = f"""
+            <div class="file-item">
+                <h3>{file_result['file_name']} ({file_result['file_type']})</h3>
+                <p>Lines scanned: {file_result.get('lines_scanned', 0)} | Issues found: {issues_count}</p>
+        """
+        
+        if issues_count > 0:
+            file_html += "<div style='margin-top: 15px;'>"
+            for issue in file_result.get('issues', []):
+                severity_class = issue['severity'].lower()
+                file_html += f"""
+                    <div class="issue {severity_class}">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong>Line {issue['line_number']}: {issue['message']}</strong>
+                            <span class="severity severity-{issue['severity']}">{issue['severity']}</span>
+                        </div>
+                        <div class="code">{issue['code_snippet']}</div>
+                        <div style="margin-top: 8px; color: #28a745;">
+                            <strong>Fix:</strong> {issue['suggested_fix']}
+                        </div>
+                    </div>
+                """
+            file_html += "</div>"
+        else:
+            file_html += "<div style='color: #28a745; font-weight: bold;'>✓ No security issues found</div>"
+        
+        file_html += "</div>"
+        report_html += file_html
+    
+    report_html += """
+        </div>
+        
+        <div class="section">
+            <h2>Scan Summary</h2>
+            <p>This security scan analyzed your uploaded files for common vulnerabilities and code quality issues.</p>
+            <p>For critical and major issues, please review the suggested fixes and implement them as soon as possible.</p>
+            <p>Generated by Enhanced Security Scanner on """ + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + """</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return report_html
+
+@app.route('/api/scan/history')
+def get_file_scan_history():
+    try:
+        scan_history_file = scanner.data_dir / "file_scan_history.json"
+        if not scan_history_file.exists():
+            return jsonify([])
+        with open(scan_history_file, 'r') as f:
+            history = json.load(f)
+        history.sort(key=lambda x: x['timestamp'], reverse=True)
+        return jsonify(history)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/files/supported-types')
+def get_supported_file_types():
+    return jsonify({
+        'extensions': [
+            '.py', '.js', '.ts', '.java', '.html', '.css', '.json',
+            '.xml', '.sql', '.rb', '.go', '.c', '.cpp', '.cs'
+        ],
+        'max_file_size_mb': 16,
+        'max_files_per_upload': 50
+    })
+
+
+@app.route('/api/dashboard/file-upload-metrics')
+def get_file_upload_metrics():
+    try:
+        scan_history_file = scanner.data_dir / "file_scan_history.json"
+        if not scan_history_file.exists():
+            return jsonify({'error': 'No file upload history found'})
+        with open(scan_history_file, 'r') as f:
+            history = json.load(f)
+        if not history:
+            return jsonify({'error': 'No scans found'})
+        recent = history[-10:]
+        return jsonify({
+            'latest_scan': recent[-1],
+            'recent_activity': {
+                'total_scans': len(recent),
+                'total_files_scanned': sum(s['files_scanned'] for s in recent),
+                'total_issues_found': sum(s['total_issues'] for s in recent),
+                'quality_gate_pass_rate': 100 * sum(1 for s in recent if s['quality_gate_passed']) / len(recent),
+                'average_issues_per_scan': sum(s['total_issues'] for s in recent) / len(recent)
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("🚀 Starting Enhanced Security Scanner Dashboard...")

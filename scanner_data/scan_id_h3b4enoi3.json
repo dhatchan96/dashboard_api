@@ -1,0 +1,170 @@
+{
+  "scan_id": "id_h3b4enoi3",
+  "project_id": "upload-scan-1752660985796",
+  "project_name": "Quick Security Scan",
+  "scan_type": "manual",
+  "timestamp": "2025-07-16T15:46:26.442425",
+  "duration_ms": 24,
+  "files_scanned": 12,
+  "lines_of_code": 403,
+  "file_results": [
+    {
+      "file_id": "id_opd3qf45v",
+      "file_name": "api.js",
+      "file_type": "javascript",
+      "lines_scanned": 34,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    },
+    {
+      "file_id": "id_jfnjigbwz",
+      "file_name": "App.css",
+      "file_type": "css",
+      "lines_scanned": 42,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    },
+    {
+      "file_id": "id_q8a37ef29",
+      "file_name": "App.js",
+      "file_type": "javascript",
+      "lines_scanned": 48,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    },
+    {
+      "file_id": "id_g99djlecg",
+      "file_name": "App.test.js",
+      "file_type": "javascript",
+      "lines_scanned": 8,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    },
+    {
+      "file_id": "id_ztz8uc0vr",
+      "file_name": "index.css",
+      "file_type": "css",
+      "lines_scanned": 13,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    },
+    {
+      "file_id": "id_ywtbm2dec",
+      "file_name": "index.js",
+      "file_type": "javascript",
+      "lines_scanned": 19,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    },
+    {
+      "file_id": "id_78c8zlk4j",
+      "file_name": "logo.svg",
+      "file_type": "unknown",
+      "lines_scanned": 1,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    },
+    {
+      "file_id": "id_ah506bwk7",
+      "file_name": "reportWebVitals.js",
+      "file_type": "javascript",
+      "lines_scanned": 13,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    },
+    {
+      "file_id": "id_2x85p5c2v",
+      "file_name": "Results.js",
+      "file_type": "javascript",
+      "lines_scanned": 60,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    },
+    {
+      "file_id": "id_1uyny35g7",
+      "file_name": "setupTests.js",
+      "file_type": "javascript",
+      "lines_scanned": 5,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    },
+    {
+      "file_id": "id_uuykvhen5",
+      "file_name": "TextAnalyzer.js",
+      "file_type": "javascript",
+      "lines_scanned": 80,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    },
+    {
+      "file_id": "id_bvomnr325",
+      "file_name": "UploadForm.js",
+      "file_type": "javascript",
+      "lines_scanned": 80,
+      "issues": [],
+      "issues_count": 0,
+      "critical_issues": 0,
+      "scan_status": "completed"
+    }
+  ],
+  "summary": {
+    "total_issues": 0,
+    "critical_issues": 0,
+    "security_rating": "A",
+    "quality_gate_passed": true,
+    "technical_debt_hours": 0
+  },
+  "metrics": {
+    "security_rating": "A",
+    "reliability_rating": "A",
+    "maintainability_rating": "A",
+    "technical_debt_hours": 0,
+    "lines_of_code": 403,
+    "coverage": 85.0,
+    "duplications": 2.0
+  },
+  "quality_gate": {
+    "status": "OK",
+    "message": "Quality Gate Passed"
+  },
+  "issue_breakdown": {
+    "by_severity": {},
+    "by_type": {},
+    "by_file": {
+      "api.js": 0,
+      "App.css": 0,
+      "App.js": 0,
+      "App.test.js": 0,
+      "index.css": 0,
+      "index.js": 0,
+      "logo.svg": 0,
+      "reportWebVitals.js": 0,
+      "Results.js": 0,
+      "setupTests.js": 0,
+      "TextAnalyzer.js": 0,
+      "UploadForm.js": 0
+    }
+  }
+}
