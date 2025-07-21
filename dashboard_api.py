@@ -14,6 +14,10 @@ from typing import Dict, List, Any, Optional
 import uuid
 import tempfile
 from pathlib import Path
+import io
+import zipfile
+from dataclasses import dataclass
+import ast
 
 # Import our main scanner components
 from security_scanner_main import (
@@ -26,6 +30,69 @@ CORS(app)
 
 # Initialize scanner
 scanner = SecurityScanner()
+
+@dataclass
+class MalwarePattern:
+    """Advanced malware pattern for multi-language detection."""
+    pattern_type: str
+    description: str
+    severity: str
+    line_number: int
+    code_snippet: str
+    confidence: float
+    language: str
+
+class MultiLanguageMalwareDetector:
+    def __init__(self):
+        self.malware_patterns = []
+        self.supported_languages = {
+            '.py': 'python', '.java': 'java', '.js': 'javascript', '.ts': 'typescript',
+            '.cs': 'csharp', '.vb': 'vbnet', '.jsx': 'react', '.tsx': 'react_typescript',
+            '.json': 'config', '.html': 'html', '.php': 'php', '.rb': 'ruby',
+            '.go': 'golang', '.cpp': 'cpp', '.c': 'c'
+        }
+        self.init_malware_signatures()
+
+    def init_malware_signatures(self):
+        self.time_bomb_patterns = [(r'if.*date.*>.*\d{4}', "Date comparison")]
+        self.financial_fraud_patterns = [(r'bitcoin.*address.*[13][a-km-zA-HJ-NP-Z1-9]{25,34}', "Bitcoin address")]
+        self.system_op_patterns = [(r'exec\s*\(', "Exec call")]
+        self.obfuscation_patterns = [(r'eval\s*\(', "Eval usage")]
+        self.malware_indicators = [(r'backdoor|reverse.*shell', "Backdoor")]
+
+    def detect_language(self, filepath: str, content: str) -> str:
+        _, ext = os.path.splitext(filepath.lower())
+        return self.supported_languages.get(ext, 'unknown')
+
+    def analyze_file(self, filepath: str) -> list:
+        try:
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            language = self.detect_language(filepath, content)
+            self.malware_patterns = []
+            self._check_patterns(content, language)
+            return self.malware_patterns
+        except Exception:
+            return []
+
+    def _check_patterns(self, content: str, language: str):
+        lines = content.split('\n')
+        for i, line in enumerate(lines, 1):
+            for plist, ptype in [
+                (self.time_bomb_patterns, "TIME_BOMB"),
+                (self.financial_fraud_patterns, "FINANCIAL_FRAUD"),
+                (self.system_op_patterns, "SYSTEM_OP"),
+                (self.obfuscation_patterns, "OBFUSCATION"),
+                (self.malware_indicators, "MALWARE_INDICATOR")
+            ]:
+                for pattern, desc in plist:
+                    if re.search(pattern, line, re.IGNORECASE):
+                        self.malware_patterns.append(
+                            MalwarePattern(ptype, desc, "HIGH", i, line.strip(), 0.9, language)
+                        )
+
+# Global malware detector instance
+malware_detector = MultiLanguageMalwareDetector()
 
 # Dashboard HTML template
 DASHBOARD_HTML = """
@@ -711,23 +778,58 @@ DASHBOARD_HTML = """
 </html>
 """
 
+
+
 @app.route('/')
 def dashboard():
     """Serve the main dashboard"""
     return render_template_string(DASHBOARD_HTML)
+
+# @app.route('/api/dashboard/metrics')
+# def get_dashboard_metrics():
+#     """Get dashboard metrics"""
+#     try:
+#         metrics = scanner.get_dashboard_metrics()
+        
+#         # Add recent issues to the response
+#         if not metrics.get('error'):
+#             recent_issues = []
+#             for scan in scanner.scan_history[-5:]:  # Last 5 scans
+#                 recent_issues.extend([
+#                     {
+#                         'id': issue.id,
+#                         'rule_id': issue.rule_id,
+#                         'file_path': issue.file_path,
+#                         'line_number': issue.line_number,
+#                         'message': issue.message,
+#                         'severity': issue.severity,
+#                         'type': issue.type,
+#                         'status': issue.status,
+#                         'suggested_fix': issue.suggested_fix
+#                     }
+#                     for issue in scan.issues[:10]  # Top 10 issues per scan
+#                 ])
+            
+#             metrics['recent_issues'] = recent_issues[-20:]  # Last 20 issues
+        
+#         return jsonify(metrics)
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/dashboard/metrics')
 def get_dashboard_metrics():
     """Get dashboard metrics"""
     try:
         metrics = scanner.get_dashboard_metrics()
-        
+
         # Add recent issues to the response
         if not metrics.get('error'):
             recent_issues = []
+            malware_issues = []
+
             for scan in scanner.scan_history[-5:]:  # Last 5 scans
-                recent_issues.extend([
-                    {
+                for issue in scan.issues[:10]:  # Top 10 issues per scan
+                    issue_data = {
                         'id': issue.id,
                         'rule_id': issue.rule_id,
                         'file_path': issue.file_path,
@@ -738,14 +840,32 @@ def get_dashboard_metrics():
                         'status': issue.status,
                         'suggested_fix': issue.suggested_fix
                     }
-                    for issue in scan.issues[:10]  # Top 10 issues per scan
-                ])
-            
-            metrics['recent_issues'] = recent_issues[-20:]  # Last 20 issues
-        
+                    recent_issues.append(issue_data)
+
+                    if issue.rule_id.startswith("MALWARE_"):
+                        malware_issues.append(issue)
+
+            metrics['recent_issues'] = recent_issues[-20:]
+
+            # Add malware stats
+            if malware_issues:
+                metrics['malware_patterns_found'] = len(malware_issues)
+                metrics['malware_analysis'] = {
+                    'by_type': {
+                        rule_id.replace("MALWARE_", ""): sum(1 for i in malware_issues if i.rule_id == rule_id)
+                        for rule_id in set(i.rule_id for i in malware_issues)
+                    },
+                    'by_severity': {
+                        'HIGH': sum(1 for i in malware_issues if i.severity == "HIGH"),
+                        'MEDIUM': sum(1 for i in malware_issues if i.severity == "MEDIUM"),
+                        'LOW': sum(1 for i in malware_issues if i.severity == "LOW")
+                    }
+                }
+
         return jsonify(metrics)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/scan', methods=['POST'])
 def start_scan():
@@ -1244,153 +1364,23 @@ def import_data():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/health')
+@app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
+    """System health check."""
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
         'version': '1.0.0',
         'scanner_status': 'operational',
+        'malware_detection': 'enabled',
+        'supported_languages': list(malware_detector.supported_languages.values()),
         'data_directory': str(scanner.data_dir),
         'rules_count': len(scanner.rules_engine.rules),
         'quality_gates_count': len(scanner.quality_gates.gates),
         'total_issues': len(scanner.issue_manager.issues),
-        'scan_history_count': len(scanner.scan_history)
+        'scan_history_count': len(scanner.scan_history),
     })
 
-# @app.route('/api/scan/files', methods=['POST'])
-# def scan_uploaded_files():
-#     try:
-#         data = request.get_json()
-#         scan_id = data.get('scan_id', str(uuid.uuid4()))
-#         scan_type = data.get('scan_type', 'quick')
-#         file_contents = data.get('file_contents', [])
-#         project_id = data.get('project_id', f'upload-scan-{int(datetime.now().timestamp())}')
-#         project_name = data.get('project_name', 'File Upload Scan')
-#         timestamp = datetime.utcnow().isoformat()
-
-#         if not file_contents:
-#             return jsonify({'error': 'No files provided'}), 400
-
-#         issues = []
-#         lines_of_code = 0
-#         file_results = []
-
-#         with tempfile.TemporaryDirectory() as temp_dir:
-#             temp_path = Path(temp_dir)
-#             for file_data in file_contents:
-#                 file_path = temp_path / file_data['name']
-#                 file_path.parent.mkdir(parents=True, exist_ok=True)
-
-#                 with open(file_path, 'w', encoding='utf-8') as f:
-#                     f.write(file_data['content'])
-
-#                 content = file_data['content']
-#                 lines = content.splitlines()
-#                 loc = len(lines)
-#                 lines_of_code += loc
-#                 language = file_data['type']
-
-#                 rules = scanner.rules_engine.get_enabled_rules(language)
-#                 file_issues = scanner._scan_file_with_rules(file_data['name'], content, rules)
-#                 issues.extend(file_issues)
-
-#                 file_results.append({
-#                     "file_id": file_data['id'],
-#                     "file_name": file_data['name'],
-#                     "file_type": language,
-#                     "lines_scanned": loc,
-#                     "issues_count": len(file_issues),
-#                     "critical_issues": len([i for i in file_issues if i.severity == "CRITICAL"]),
-#                     "issues": [asdict(i) for i in file_issues],
-#                     "scan_status": "completed"
-#                 })
-
-#         # Metrics
-#         coverage = 85.0
-#         duplications = 2.0
-#         tech_debt = MetricsCalculator.calculate_technical_debt(issues)
-#         security_rating = MetricsCalculator.calculate_security_rating(issues)
-#         reliability_rating = MetricsCalculator.calculate_reliability_rating(issues)
-#         maintainability_rating = MetricsCalculator.calculate_maintainability_rating(tech_debt, lines_of_code)
-
-#         metrics = {
-#             "security_rating": ord(security_rating) - ord('A') + 1,
-#             "reliability_rating": ord(reliability_rating) - ord('A') + 1,
-#             "sqale_rating": ord(maintainability_rating) - ord('A') + 1,
-#             "coverage": coverage,
-#             "duplicated_lines_density": duplications,
-#             "blocker_violations": len([i for i in issues if i.severity == "BLOCKER"]),
-#             "critical_violations": len([i for i in issues if i.severity == "CRITICAL"])
-#         }
-
-#         default_gate = next((g for g in scanner.quality_gates.gates.values() if g.is_default), None)
-#         gate_result = scanner.quality_gates.evaluate_gate(default_gate.id, metrics) if default_gate else {}
-#         gate_status = gate_result.get("status", "OK")
-
-#         # Save scan
-#         scan_result = ScanResult(
-#             project_id=project_id,
-#             scan_id=scan_id,
-#             timestamp=timestamp,
-#             duration_ms=0,
-#             files_scanned=len(file_contents),
-#             lines_of_code=lines_of_code,
-#             issues=issues,
-#             coverage=coverage,
-#             duplications=duplications,
-#             maintainability_rating=maintainability_rating,
-#             reliability_rating=reliability_rating,
-#             security_rating=security_rating,
-#             quality_gate_status=gate_status
-#         )
-
-#         scanner.scan_history.append(scan_result)
-#         scanner.save_scan_history()
-#         for issue in issues:
-#             scanner.issue_manager.issues[issue.id] = issue
-#         scanner.issue_manager.save_issues()
-
-#         return jsonify({
-#             "scan_id": scan_id,
-#             "project_id": project_id,
-#             "project_name": project_name,
-#             "timestamp": timestamp,
-#             "scan_type": scan_type,
-#             "duration_ms": 0,
-#             "files_scanned": len(file_contents),
-#             "lines_of_code": lines_of_code,
-#             "file_results": file_results,
-#             "summary": {
-#                 "total_issues": len(issues),
-#                 "critical_issues": len([i for i in issues if i.severity == "CRITICAL"]),
-#                 "quality_gate_passed": gate_status == "OK",
-#                 "security_rating": security_rating,
-#                 "technical_debt_hours": tech_debt // 60
-#             },
-#             "metrics": {
-#                 "coverage": coverage,
-#                 "duplications": duplications,
-#                 "lines_of_code": lines_of_code,
-#                 "maintainability_rating": maintainability_rating,
-#                 "reliability_rating": reliability_rating,
-#                 "security_rating": security_rating,
-#                 "technical_debt_hours": tech_debt // 60
-#             },
-#             "quality_gate": {
-#                 "status": gate_status,
-#                 "message": "Quality Gate Passed" if gate_status == "OK" else "Quality Gate Failed"
-#             },
-#             "issue_breakdown": {
-#                 "by_file": {f["file_name"]: f["issues_count"] for f in file_results},
-#                 "by_severity": {},
-#                 "by_type": {}
-#             }
-#         })
-
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/scan/files', methods=['POST'])
 def scan_uploaded_files():
@@ -1439,11 +1429,152 @@ def scan_uploaded_files():
 
 
 
+# def perform_file_scan(scan_id: str, project_id: str, project_name: str, 
+#                       file_paths: list, scan_type: str = 'quick') -> dict:
+#     """Perform security scan on uploaded files and persist results into scanner."""
+#     start_time = datetime.now()
+#     total_issues = []
+#     file_results = []
+#     total_lines = 0
+
+#     for file_info in file_paths:
+#         try:
+#             file_path = file_info['path']
+#             file_name = file_info['name']
+#             file_type = file_info['type']
+#             file_id = file_info['id']
+
+#             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+#                 content = f.read()
+
+#             lines = content.splitlines()
+#             file_lines = len(lines)
+#             total_lines += file_lines
+
+#             applicable_rules = scanner.rules_engine.get_enabled_rules(file_type)
+#             file_issues = scan_file_content(file_name, content, applicable_rules, file_id)
+
+#             file_result = {
+#                 'file_id': file_id,
+#                 'file_name': file_name,
+#                 'file_type': file_type,
+#                 'lines_scanned': file_lines,
+#                 'issues': [format_issue_for_response(issue) for issue in file_issues],
+#                 'issues_count': len(file_issues),
+#                 'critical_issues': len([i for i in file_issues if i.severity in ['BLOCKER', 'CRITICAL']]),
+#                 'scan_status': 'completed'
+#             }
+
+#             file_results.append(file_result)
+#             total_issues.extend(file_issues)
+#         except Exception as e:
+#             file_results.append({
+#                 'file_id': file_info['id'],
+#                 'file_name': file_info['name'],
+#                 'file_type': file_info['type'],
+#                 'scan_status': 'error',
+#                 'error_message': str(e)
+#             })
+
+#     # Compute metrics
+#     tech_debt = MetricsCalculator.calculate_technical_debt(total_issues)
+#     security_rating = MetricsCalculator.calculate_security_rating(total_issues)
+#     reliability_rating = MetricsCalculator.calculate_reliability_rating(total_issues)
+#     maintainability_rating = MetricsCalculator.calculate_maintainability_rating(tech_debt, total_lines)
+#     coverage = 85.0
+#     duplications = 2.0
+
+#     metrics = {
+#         'security_rating': ord(security_rating) - ord('A') + 1,
+#         'reliability_rating': ord(reliability_rating) - ord('A') + 1,
+#         'sqale_rating': ord(maintainability_rating) - ord('A') + 1,
+#         'coverage': coverage,
+#         'duplicated_lines_density': duplications,
+#         'blocker_violations': len([i for i in total_issues if i.severity == "BLOCKER"]),
+#         'critical_violations': len([i for i in total_issues if i.severity == "CRITICAL"])
+#     }
+
+#     default_gate = next((g for g in scanner.quality_gates.gates.values() if g.is_default), None)
+#     gate_result = scanner.quality_gates.evaluate_gate(default_gate.id, metrics) if default_gate else {}
+#     gate_status = gate_result.get("status", "OK")
+
+#     duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+#     timestamp = start_time.isoformat()
+
+#     # Construct ScanResult
+#     scan_result_obj = ScanResult(
+#         project_id=project_id,
+#         scan_id=scan_id,
+#         timestamp=timestamp,
+#         duration_ms=duration_ms,
+#         files_scanned=len(file_paths),
+#         lines_of_code=total_lines,
+#         issues=total_issues,
+#         coverage=coverage,
+#         duplications=duplications,
+#         maintainability_rating=maintainability_rating,
+#         reliability_rating=reliability_rating,
+#         security_rating=security_rating,
+#         quality_gate_status=gate_status
+#     )
+
+#     # ✅ Save to scanner (history + issues)
+#     scanner.scan_history.append(scan_result_obj)
+#     scanner.save_scan_history()
+
+#     for issue in total_issues:
+#         scanner.issue_manager.issues[issue.id] = issue
+#     scanner.issue_manager.save_issues()
+
+#     # Save prompt files to disk for Copilot
+#     copilot_output_dir = scanner.data_dir / "copilot_prompts"
+#     export_copilot_prompts(total_issues, copilot_output_dir)
+
+
+#     # Return JSON-serializable response
+#     return {
+#         'scan_id': scan_id,
+#         'project_id': project_id,
+#         'project_name': project_name,
+#         'scan_type': scan_type,
+#         'timestamp': timestamp,
+#         'duration_ms': duration_ms,
+#         'files_scanned': len(file_paths),
+#         'lines_of_code': total_lines,
+#         'file_results': file_results,
+#         'summary': {
+#             'total_issues': len(total_issues),
+#             'critical_issues': len([i for i in total_issues if i.severity in ['BLOCKER', 'CRITICAL']]),
+#             'security_rating': security_rating,
+#             'quality_gate_passed': gate_status == "OK",
+#             'technical_debt_hours': tech_debt // 60
+#         },
+#         'metrics': {
+#             'coverage': coverage,
+#             'duplications': duplications,
+#             'lines_of_code': total_lines,
+#             'maintainability_rating': maintainability_rating,
+#             'reliability_rating': reliability_rating,
+#             'security_rating': security_rating,
+#             'technical_debt_hours': tech_debt // 60
+#         },
+#         'quality_gate': {
+#             'status': gate_status,
+#             'message': 'Quality Gate Passed' if gate_status == 'OK' else 'Quality Gate Failed'
+#         },
+#         'issue_breakdown': {
+#             'by_file': {f['file_name']: f['issues_count'] for f in file_results},
+#             'by_severity': {},  # Optionally populate
+#             'by_type': {}       # Optionally populate
+#         }
+#     }
+
 def perform_file_scan(scan_id: str, project_id: str, project_name: str, 
                       file_paths: list, scan_type: str = 'quick') -> dict:
     """Perform security scan on uploaded files and persist results into scanner."""
     start_time = datetime.now()
     total_issues = []
+    total_malware_patterns = []
     file_results = []
     total_lines = 0
 
@@ -1461,22 +1592,45 @@ def perform_file_scan(scan_id: str, project_id: str, project_name: str,
             file_lines = len(lines)
             total_lines += file_lines
 
+            # 🔍 Standard security rules
             applicable_rules = scanner.rules_engine.get_enabled_rules(file_type)
             file_issues = scan_file_content(file_name, content, applicable_rules, file_id)
+
+            # 🛡️ Malware detection
+            malware_matches = malware_detector.analyze_file(file_path)
+            malware_issues = [
+                scanner.issue_manager.create_issue(
+                    rule_id=f"MALWARE_{pattern.pattern_type}",
+                    file_path=file_name,
+                    line_number=pattern.line_number,
+                    column=1,
+                    message=pattern.description,
+                    severity=pattern.severity,
+                    issue_type="VULNERABILITY",
+                    code_snippet=pattern.code_snippet,
+                    suggested_fix=f"Review/remove {pattern.pattern_type.lower()} behavior"
+                )
+                for pattern in malware_matches
+            ]
+
+            all_issues = file_issues + malware_issues
 
             file_result = {
                 'file_id': file_id,
                 'file_name': file_name,
                 'file_type': file_type,
                 'lines_scanned': file_lines,
-                'issues': [format_issue_for_response(issue) for issue in file_issues],
-                'issues_count': len(file_issues),
-                'critical_issues': len([i for i in file_issues if i.severity in ['BLOCKER', 'CRITICAL']]),
+                'issues': [format_issue_for_response(issue) for issue in all_issues],
+                'issues_count': len(all_issues),
+                'malware_count': len(malware_matches),
+                'critical_issues': len([i for i in all_issues if i.severity in ['BLOCKER', 'CRITICAL', 'HIGH']]),
                 'scan_status': 'completed'
             }
 
             file_results.append(file_result)
-            total_issues.extend(file_issues)
+            total_issues.extend(all_issues)
+            total_malware_patterns.extend(malware_matches)
+
         except Exception as e:
             file_results.append({
                 'file_id': file_info['id'],
@@ -1528,7 +1682,7 @@ def perform_file_scan(scan_id: str, project_id: str, project_name: str,
         quality_gate_status=gate_status
     )
 
-    # ✅ Save to scanner (history + issues)
+    # Save to scanner (history + issues)
     scanner.scan_history.append(scan_result_obj)
     scanner.save_scan_history()
 
@@ -1536,7 +1690,10 @@ def perform_file_scan(scan_id: str, project_id: str, project_name: str,
         scanner.issue_manager.issues[issue.id] = issue
     scanner.issue_manager.save_issues()
 
-    # Return JSON-serializable response
+    # Save prompt files to disk for Copilot
+    copilot_output_dir = scanner.data_dir / "copilot_prompts"
+    export_copilot_prompts(total_issues, copilot_output_dir)
+
     return {
         'scan_id': scan_id,
         'project_id': project_id,
@@ -1549,8 +1706,11 @@ def perform_file_scan(scan_id: str, project_id: str, project_name: str,
         'file_results': file_results,
         'summary': {
             'total_issues': len(total_issues),
+            'malware_patterns_found': len(total_malware_patterns),
             'critical_issues': len([i for i in total_issues if i.severity in ['BLOCKER', 'CRITICAL']]),
             'security_rating': security_rating,
+            'malware_risk_level': "HIGH" if any(p.severity == "HIGH" for p in total_malware_patterns)
+                                  else "MEDIUM" if total_malware_patterns else "LOW",
             'quality_gate_passed': gate_status == "OK",
             'technical_debt_hours': tech_debt // 60
         },
@@ -1567,12 +1727,75 @@ def perform_file_scan(scan_id: str, project_id: str, project_name: str,
             'status': gate_status,
             'message': 'Quality Gate Passed' if gate_status == 'OK' else 'Quality Gate Failed'
         },
+        'malware_analysis': {
+            'total_patterns': len(total_malware_patterns),
+            'by_severity': {
+                'HIGH': len([p for p in total_malware_patterns if p.severity == 'HIGH']),
+                'MEDIUM': len([p for p in total_malware_patterns if p.severity == 'MEDIUM']),
+                'LOW': len([p for p in total_malware_patterns if p.severity == 'LOW'])
+            },
+            'by_type': {
+                pattern_type: len([p for p in total_malware_patterns if p.pattern_type == pattern_type])
+                for pattern_type in set(p.pattern_type for p in total_malware_patterns)
+            }
+        },
         'issue_breakdown': {
             'by_file': {f['file_name']: f['issues_count'] for f in file_results},
-            'by_severity': {},  # Optionally populate
-            'by_type': {}       # Optionally populate
+            'by_severity': {},  # Optional
+            'by_type': {}       # Optional
         }
     }
+
+
+
+
+def export_copilot_prompts(issues: list, output_dir: Path):
+    """Clean old prompts and generate new markdown prompt files for GitHub Copilot"""
+    # Create or clean the prompt output directory
+    if output_dir.exists():
+        for file in output_dir.glob("*.md"):
+            file.unlink()  # delete each old markdown file
+    else:
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    for issue in issues:
+        # Sanitize filename
+        safe_file = issue.file_path.replace('/', '_').replace('\\', '_')
+        file_name = f"{safe_file}_L{issue.line_number}_{issue.rule_id}.md"
+
+        with open(output_dir / file_name, 'w', encoding='utf-8') as f:
+            f.write(f"## File: {issue.file_path} | Line: {issue.line_number}\n")
+            f.write(f"**Rule ID:** {issue.rule_id}\n")
+            f.write(f"**Severity:** {issue.severity}\n")
+            f.write(f"**Type:** {issue.type}\n")
+            f.write(f"**Message:** {issue.message}\n")
+            f.write(f"**Code Snippet:**\n```{issue.code_snippet}```\n")
+            f.write(f"**Suggested Fix:** {issue.suggested_fix or 'Review based on best practices.'}\n")
+
+
+
+@app.route('/api/copilot/prompts/download')
+def download_copilot_prompts():
+    """Download Copilot prompt files as zip"""
+    try:
+        prompt_dir = scanner.data_dir / "copilot_prompts"
+        if not prompt_dir.exists():
+            return jsonify({'error': 'No prompts found'}), 404
+
+        memory_file = io.BytesIO()
+        with zipfile.ZipFile(memory_file, 'w') as zf:
+            for file_path in prompt_dir.glob("*.md"):
+                zf.write(file_path, arcname=file_path.name)
+        memory_file.seek(0)
+
+        return send_file(
+            memory_file,
+            mimetype='application/zip',
+            download_name='copilot_prompts.zip',
+            as_attachment=True
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 def format_issue_for_response(issue) -> dict:
