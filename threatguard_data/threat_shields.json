@@ -1,0 +1,58 @@
+[
+  {
+    "id": "logic-bomb-protection-shield",
+    "name": "Logic Bomb Protection Shield",
+    "protection_rules": [
+      {
+        "threat_type": "",
+        "risk_threshold": "HIGH_RISK",
+        "block": true,
+        "alert": true
+      },
+      {
+        "threat_type": "TARGETED_ATTACK",
+        "risk_threshold": "CRITICAL_BOMB",
+        "block": true,
+        "alert": true
+      },
+      {
+        "threat_type": "EXECUTION_TRIGGER",
+        "risk_threshold": "HIGH_RISK",
+        "block": true,
+        "alert": true
+      },
+      {
+        "threat_type": "DESTRUCTIVE_PAYLOAD",
+        "risk_threshold": "CRITICAL_BOMB",
+        "block": true,
+        "alert": true
+      },
+      {
+        "threat_type": "SYSTEM_SPECIFIC_THREAT",
+        "risk_threshold": "MEDIUM_RISK",
+        "block": false,
+        "alert": true
+      },
+      {
+        "threat_type": "CONNECTION_BASED_THREAT",
+        "risk_threshold": "MEDIUM_RISK",
+        "block": false,
+        "alert": true
+      },
+      {
+        "threat_type": "FILE_BOMB",
+        "risk_threshold": "MEDIUM_RISK",
+        "block": false,
+        "alert": true
+      }
+    ],
+    "is_default": true,
+    "threat_categories": [
+      "SCHEDULED_THREAT",
+      "TARGETED_ATTACK",
+      "EXECUTION_TRIGGER",
+      "DESTRUCTIVE_PAYLOAD"
+    ],
+    "risk_threshold": "MEDIUM_RISK"
+  }
+]
